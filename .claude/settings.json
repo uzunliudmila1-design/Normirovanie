@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/Users/liudmila/Library/Application Support/Claude/claude-code/2.1.78/claude.app/Contents/MacOS/claude\" --version)",
+      "Bash(kill 63934)"
+    ]
+  }
+}

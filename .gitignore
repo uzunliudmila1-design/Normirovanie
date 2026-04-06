@@ -1,0 +1,25 @@
+# Python
+venv/
+/tmp/norm_venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+
+# Секреты — НЕ пушить API-ключи!
+.env
+
+# Базы данных
+*.db
+
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+
+# Claude
+.claude/settings.local.json
+
+# Временные файлы
+*.tmp
+*.log
