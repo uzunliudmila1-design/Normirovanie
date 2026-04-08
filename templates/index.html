@@ -2365,8 +2365,9 @@
 
     const remarks = analysis.remarks || [];
     const summary = analysis.summary || '';
-    const zamCount = remarks.filter(r => r.type === 'замечание').length;
-    const optCount = remarks.filter(r => r.type === 'оптимизация').length;
+    const getType = r => r.type || r['тип'] || 'замечание';
+    const zamCount = remarks.filter(r => getType(r) === 'замечание').length;
+    const optCount = remarks.filter(r => getType(r) === 'оптимизация').length;
 
     let html = `<div class="part-remarks-header">
       Анализ чертежа
@@ -2379,18 +2380,26 @@
     }
 
     remarks.forEach(r => {
-      const typeClass = r.type === 'замечание' ? 'zam' : 'opt';
-      const prioClass = r.priority === 'высокий' ? 'high' : r.priority === 'средний' ? 'mid' : 'low';
+      // Нормализуем — модель может вернуть поля с другими именами
+      const rType = r.type || r['тип'] || 'замечание';
+      const rPriority = r.priority || r['приоритет'] || '';
+      const rCategory = r.category || r['категория'] || '';
+      const rTitle = r.title || r['заголовок'] || r['название'] || '';
+      const rDesc = r.description || r['описание'] || '';
+      const rSug = r.suggestion || r['рекомендация'] || '';
+
+      const typeClass = rType === 'оптимизация' ? 'opt' : 'zam';
+      const prioClass = rPriority === 'высокий' ? 'high' : rPriority === 'средний' ? 'mid' : 'low';
       html += `<div class="part-remark">
         <div class="part-remark-badges">
-          <span class="part-remark-badge ${typeClass}">${esc(r.type)}</span>
-          <span class="part-remark-badge ${prioClass}">${esc(r.priority)}</span>
-          <span class="part-remark-badge" style="background:var(--card2-bg);color:var(--text3)">${esc(r.category || '')}</span>
+          <span class="part-remark-badge ${typeClass}">${esc(rType)}</span>
+          ${rPriority ? `<span class="part-remark-badge ${prioClass}">${esc(rPriority)}</span>` : ''}
+          ${rCategory ? `<span class="part-remark-badge" style="background:var(--card2-bg);color:var(--text3)">${esc(rCategory)}</span>` : ''}
           ${r.gost_outdated ? '<span class="part-remark-badge zam">Норма устарела</span>' : ''}
         </div>
-        <div class="part-remark-title">${esc(r.title || '')}</div>
-        <div class="part-remark-desc">${esc(r.description || '')}</div>
-        ${r.suggestion ? `<div class="part-remark-sug">${esc(r.suggestion).replace(/\n/g, '<br>')}</div>` : ''}
+        <div class="part-remark-title">${esc(rTitle)}</div>
+        <div class="part-remark-desc">${esc(rDesc)}</div>
+        ${rSug ? `<div class="part-remark-sug">${esc(rSug).replace(/\n/g, '<br>')}</div>` : ''}
       </div>`;
     });
 

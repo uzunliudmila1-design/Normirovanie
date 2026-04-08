@@ -312,6 +312,22 @@ def _analyze_drawing_from_disk(pdf_path: str) -> dict:
         user_prompt=user_prompt,
         pdf_files=[("Чертёж детали", pdf_path)],
     )
+
+    # Нормализуем поля замечаний — модель может вернуть русские ключи
+    for r in result.get("remarks", []):
+        if "type" not in r and "тип" in r:
+            r["type"] = r.pop("тип")
+        if "priority" not in r and "приоритет" in r:
+            r["priority"] = r.pop("приоритет")
+        if "category" not in r and "категория" in r:
+            r["category"] = r.pop("категория")
+        if "title" not in r:
+            r["title"] = r.pop("заголовок", r.pop("название", ""))
+        if "description" not in r:
+            r["description"] = r.pop("описание", "")
+        if "suggestion" not in r:
+            r["suggestion"] = r.pop("рекомендация", "")
+
     return result
 
 
