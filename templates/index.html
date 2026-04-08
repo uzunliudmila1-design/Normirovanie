@@ -350,6 +350,7 @@
   .remark-desc { font-size: 11.5px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
   .remark-suggestion { font-size: 11px; color: var(--teal); margin-top: 5px; padding: 5px 9px; background: var(--teal-light); border-radius: 4px; border-left: 2px solid var(--teal); line-height: 1.45; }
   .drawing-empty { padding: 36px 24px; text-align: center; color: var(--text3); font-size: 12.5px; }
+  .remark-gost-badge { font-family:'JetBrains Mono',monospace; font-size:8px; padding:2px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.05em; background:rgba(220,80,80,0.14); color:#CC6060; border:1px solid rgba(220,80,80,0.3); }
 
   @media (max-width: 1100px) {
     .page-wrapper { grid-template-columns: 1fr; }
@@ -513,6 +514,26 @@
   .part-remark-desc { font-size: 11.5px; color: var(--text2); line-height: 1.5; }
   .part-remark-sug { font-size: 11px; color: var(--teal); margin-top: 5px; padding: 5px 9px; background: var(--teal-light); border-radius: 4px; border-left: 2px solid var(--teal); line-height: 1.45; }
   .part-summary { padding: 10px 16px; font-size: 12px; color: var(--text2); line-height: 1.5; background: var(--card2-bg); border-bottom: 1px solid var(--border); }
+
+  /* PDF VIEWER MODAL */
+  .pdf-modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); }
+  .pdf-modal-overlay.visible { display:flex; align-items:center; justify-content:center; }
+  .pdf-modal { position:relative; width:92vw; height:92vh; background:var(--card-bg); border-radius:var(--r-lg); border:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.5); }
+  .pdf-modal-header { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--card2-bg); }
+  .pdf-modal-title { font-family:'Onest',sans-serif; font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pdf-modal-controls { display:flex; align-items:center; gap:6px; }
+  .pdf-modal-controls button { width:30px; height:30px; border-radius:var(--r-sm); border:1px solid var(--border); background:var(--card-bg); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all 0.15s; }
+  .pdf-modal-controls button:hover { background:var(--teal-light); color:var(--teal); border-color:var(--teal); }
+  .pdf-modal-zoom-label { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text3); min-width:42px; text-align:center; }
+  .pdf-modal-close { width:30px; height:30px; border-radius:var(--r-sm); border:1px solid var(--border); background:var(--card-bg); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:all 0.15s; margin-left:12px; }
+  .pdf-modal-close:hover { background:rgba(220,80,80,0.15); color:#CC6060; border-color:rgba(220,80,80,0.4); }
+  .pdf-modal-viewport { flex:1; overflow:hidden; position:relative; background:#1a1a1a; cursor:grab; }
+  :root.light .pdf-modal-viewport { background:#e0e0e0; }
+  .pdf-modal-viewport.grabbing { cursor:grabbing; }
+  .pdf-modal-canvas-wrap { position:absolute; transform-origin:0 0; }
+  .pdf-modal-canvas-wrap canvas { display:block; }
+  .pdf-modal-pages { display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px; }
+  .pdf-modal-loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:13px; gap:8px; }
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -1834,11 +1855,12 @@
             <span class="remark-type-badge ${typeCls}">${typeLabel}</span>
             <span class="remark-priority ${prioCls}">${r.priority || ''}</span>
             <span class="remark-cat">${r.category || ''}</span>
+            ${r.gost_outdated ? '<span class="remark-gost-badge">Норма устарела</span>' : ''}
           </div>
         </div>
         <div class="remark-title">${esc(r.title || '')}</div>
         <div class="remark-desc">${esc(r.description || '')}</div>
-        ${r.suggestion ? `<div class="remark-suggestion">→ ${esc(r.suggestion)}</div>` : ''}
+        ${r.suggestion ? `<div class="remark-suggestion">${esc(r.suggestion).replace(/\n/g, '<br>')}</div>` : ''}
       </div>`;
   }
 
@@ -2364,10 +2386,11 @@
           <span class="part-remark-badge ${typeClass}">${esc(r.type)}</span>
           <span class="part-remark-badge ${prioClass}">${esc(r.priority)}</span>
           <span class="part-remark-badge" style="background:var(--card2-bg);color:var(--text3)">${esc(r.category || '')}</span>
+          ${r.gost_outdated ? '<span class="part-remark-badge zam">Норма устарела</span>' : ''}
         </div>
         <div class="part-remark-title">${esc(r.title || '')}</div>
         <div class="part-remark-desc">${esc(r.description || '')}</div>
-        ${r.suggestion ? `<div class="part-remark-sug">${esc(r.suggestion)}</div>` : ''}
+        ${r.suggestion ? `<div class="part-remark-sug">${esc(r.suggestion).replace(/\n/g, '<br>')}</div>` : ''}
       </div>`;
     });
 
@@ -2465,7 +2488,7 @@
     const file = _productsFiles[idx];
     if (!file) return;
     const url = `/api/products/pdf?type=${encodeURIComponent(_productsCurrentType)}&variant=${encodeURIComponent(_productsCurrentVariant)}&path=${encodeURIComponent(file.path)}`;
-    window.open(url, '_blank');
+    openPdfModal(url, file.name);
   }
 
   function exportProductToExcel() {
@@ -2670,6 +2693,175 @@
     </div>
   </div>
 </div>
+
+<!-- PDF VIEWER MODAL -->
+<div class="pdf-modal-overlay" id="pdf-modal-overlay" onclick="if(event.target===this)closePdfModal()">
+  <div class="pdf-modal">
+    <div class="pdf-modal-header">
+      <span class="pdf-modal-title" id="pdf-modal-title">Чертёж</span>
+      <div style="display:flex;align-items:center;">
+        <div class="pdf-modal-controls">
+          <button onclick="pdfModalZoom(-0.2)" title="Уменьшить">−</button>
+          <span class="pdf-modal-zoom-label" id="pdf-modal-zoom-label">100%</span>
+          <button onclick="pdfModalZoom(0.2)" title="Увеличить">+</button>
+          <button onclick="pdfModalZoomReset()" title="По размеру" style="font-size:11px;">⊡</button>
+        </div>
+        <button class="pdf-modal-close" onclick="closePdfModal()" title="Закрыть">✕</button>
+      </div>
+    </div>
+    <div class="pdf-modal-viewport" id="pdf-modal-viewport">
+      <div class="pdf-modal-canvas-wrap" id="pdf-modal-canvas-wrap">
+        <div class="pdf-modal-pages" id="pdf-modal-pages"></div>
+      </div>
+      <div class="pdf-modal-loading" id="pdf-modal-loading" style="display:none;">
+        <span class="loader"></span> Загрузка чертежа...
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PDF MODAL VIEWER ──────────────────────────────────────────────────────────
+(function() {
+  let _scale = 1;
+  let _fitScale = 1;
+  let _panX = 0, _panY = 0;
+  let _dragging = false;
+  let _startX = 0, _startY = 0;
+  let _startPanX = 0, _startPanY = 0;
+
+  const overlay   = document.getElementById('pdf-modal-overlay');
+  const viewport  = document.getElementById('pdf-modal-viewport');
+  const wrap      = document.getElementById('pdf-modal-canvas-wrap');
+  const pagesDiv  = document.getElementById('pdf-modal-pages');
+  const loading   = document.getElementById('pdf-modal-loading');
+  const zoomLabel = document.getElementById('pdf-modal-zoom-label');
+  const titleEl   = document.getElementById('pdf-modal-title');
+
+  function updateTransform() {
+    wrap.style.transform = `translate(${_panX}px, ${_panY}px) scale(${_scale})`;
+    zoomLabel.textContent = Math.round(_scale * 100) + '%';
+  }
+
+  window.openPdfModal = async function(url, title) {
+    titleEl.textContent = title || 'Чертёж';
+    pagesDiv.innerHTML = '';
+    _scale = 1; _panX = 0; _panY = 0;
+    updateTransform();
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    loading.style.display = 'flex';
+
+    try {
+      if (typeof pdfjsLib === 'undefined') {
+        pagesDiv.innerHTML = '<div style="color:var(--text3);padding:40px;text-align:center;">PDF.js не загружен. <a href="'+url+'" target="_blank" style="color:var(--teal);">Открыть в новой вкладке</a></div>';
+        loading.style.display = 'none';
+        return;
+      }
+      const resp = await fetch(url);
+      const buf = await resp.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf)}).promise;
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const vp = page.getViewport({scale: 2});
+        const canvas = document.createElement('canvas');
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        canvas.style.width = vp.width/2 + 'px';
+        canvas.style.height = vp.height/2 + 'px';
+        canvas.style.borderRadius = '4px';
+        canvas.style.boxShadow = '0 2px 12px rgba(0,0,0,0.3)';
+        pagesDiv.appendChild(canvas);
+        await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+      }
+
+      requestAnimationFrame(() => {
+        const vw = viewport.clientWidth;
+        const vh = viewport.clientHeight;
+        const cw = pagesDiv.scrollWidth;
+        const ch = pagesDiv.scrollHeight;
+        if (cw > 0 && ch > 0) {
+          _fitScale = Math.min(vw / cw, vh / ch, 1);
+          _scale = _fitScale;
+          _panX = Math.max(0, (vw - cw * _scale) / 2);
+          _panY = Math.max(0, (vh - ch * _scale) / 2);
+          updateTransform();
+        }
+      });
+    } catch(e) {
+      pagesDiv.innerHTML = '<div style="color:#CC6060;padding:40px;text-align:center;">Ошибка загрузки: '+e.message+'</div>';
+    } finally {
+      loading.style.display = 'none';
+    }
+  };
+
+  window.closePdfModal = function() {
+    overlay.classList.remove('visible');
+    document.body.style.overflow = '';
+    pagesDiv.innerHTML = '';
+  };
+
+  window.pdfModalZoom = function(delta) {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const cx = vw / 2, cy = vh / 2;
+    const oldScale = _scale;
+    _scale = Math.max(0.1, Math.min(10, _scale + delta));
+    _panX = cx - (cx - _panX) * (_scale / oldScale);
+    _panY = cy - (cy - _panY) * (_scale / oldScale);
+    updateTransform();
+  };
+
+  window.pdfModalZoomReset = function() {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const cw = pagesDiv.scrollWidth / _scale;
+    const ch = pagesDiv.scrollHeight / _scale;
+    _fitScale = Math.min(vw / cw, vh / ch, 1);
+    _scale = _fitScale;
+    _panX = Math.max(0, (vw - cw * _scale) / 2);
+    _panY = Math.max(0, (vh - ch * _scale) / 2);
+    updateTransform();
+  };
+
+  viewport.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    _dragging = true;
+    _startX = e.clientX; _startY = e.clientY;
+    _startPanX = _panX; _startPanY = _panY;
+    viewport.classList.add('grabbing');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!_dragging) return;
+    _panX = _startPanX + (e.clientX - _startX);
+    _panY = _startPanY + (e.clientY - _startY);
+    updateTransform();
+  });
+  window.addEventListener('mouseup', function() {
+    _dragging = false;
+    viewport.classList.remove('grabbing');
+  });
+
+  viewport.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const oldScale = _scale;
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    _scale = Math.max(0.1, Math.min(10, _scale + delta));
+    _panX = mx - (mx - _panX) * (_scale / oldScale);
+    _panY = my - (my - _panY) * (_scale / oldScale);
+    updateTransform();
+  }, {passive: false});
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && overlay.classList.contains('visible')) closePdfModal();
+  });
+})();
+</script>
 
 </body>
 </html>

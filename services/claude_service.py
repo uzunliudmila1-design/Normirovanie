@@ -321,6 +321,62 @@ def _save_pdf_to_project(file_obj) -> str:
     return rel_path
 
 
+def _run_cli_with_websearch(system_prompt: str, prompt: str) -> tuple[str, LLMCallMetrics]:
+    """Запускает CLI с WebSearch/WebFetch — для верификации данных через интернет.
+
+    Возвращает (текст, метрики). output-format json НЕ работает с tools.
+    """
+    env = os.environ.copy()
+    env.pop("CLAUDECODE", None)
+
+    tmp_dir = env.get("TEMP", env.get("TMP", BASE_DIR))
+
+    print("[CLI] Вызов с WebSearch...", flush=True)
+
+    t0 = time.monotonic()
+    try:
+        result = subprocess.run(
+            [
+                CLAUDE_BIN,
+                "-p", prompt,
+                "--allowedTools", "WebSearch,WebFetch",
+                "--system-prompt", system_prompt,
+                "--model", "sonnet",
+                "--no-session-persistence",
+                "--dangerously-skip-permissions",
+            ],
+            capture_output=True,
+            timeout=600,
+            env=env,
+            cwd=tmp_dir,
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Claude Code: превышен таймаут (600 сек)")
+    except FileNotFoundError:
+        raise RuntimeError(f"Claude Code CLI не найден: {CLAUDE_BIN}")
+
+    wall_ms = int((time.monotonic() - t0) * 1000)
+    stdout = (result.stdout or b"").decode("utf-8", errors="replace").strip()
+    stderr = (result.stderr or b"").decode("utf-8", errors="replace").strip()
+
+    print(f"[CLI] WebSearch returncode={result.returncode}, stdout={len(stdout)} символов, время={wall_ms}мс", flush=True)
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {stderr[:500]}")
+
+    if not stdout:
+        raise RuntimeError(f"Claude Code вернул пустой stdout. stderr: {stderr[:500]}")
+
+    metrics = LLMCallMetrics(duration_ms=wall_ms)
+    return stdout, metrics
+
+
+def call_llm_with_websearch(system_prompt: str, user_prompt: str) -> tuple[dict, list[LLMCallMetrics]]:
+    """Вызывает LLM с доступом к веб-поиску. Возвращает (JSON, [метрики])."""
+    text, metrics = _run_cli_with_websearch(system_prompt, user_prompt)
+    return _parse_json_response(text, "call_with_websearch"), [metrics]
+
+
 def _call_via_cli(system_prompt: str, user_prompt: str) -> tuple[dict, list[LLMCallMetrics]]:
     text, metrics = _run_cli_text(system_prompt, user_prompt)
     return _parse_json_response(text, "call_via_cli"), [metrics]
