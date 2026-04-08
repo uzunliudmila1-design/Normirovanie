@@ -348,6 +348,123 @@
   .remark-suggestion { font-size: 11px; color: var(--text-accent); margin-top: 5px; padding: 5px 9px; background: var(--accent-dim); border-radius: 4px; border-left: 2px solid var(--accent); line-height: 1.45; }
   .drawing-empty { padding: 36px 24px; text-align: center; color: var(--text-muted); font-size: 12.5px; }
 
+  /* PRODUCTS PANEL */
+  .products-panel { display: none; }
+  .products-panel.visible { display: block; }
+  .products-header { margin-bottom: 20px; }
+  .products-title { font-family: var(--font-ui); font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 4px 0 0; }
+
+  /* SIDEBAR TREE */
+  .sidebar-tree-toggle { display: flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 12px; color: var(--text-secondary); cursor: pointer; border-radius: var(--r-sm); transition: background 0.12s, color 0.12s; user-select: none; }
+  .sidebar-tree-toggle:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+  .sidebar-tree-toggle .chevron { font-size: 9px; transition: transform 0.15s; display: inline-block; width: 12px; text-align: center; flex-shrink: 0; }
+  .sidebar-tree-toggle .chevron.open { transform: rotate(90deg); }
+  .sidebar-tree-toggle .tree-count { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-left: auto; }
+  .sidebar-tree-children { display: none; }
+  .sidebar-tree-children.open { display: block; }
+  .sidebar-sub-item { display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 32px; font-size: 11.5px; color: var(--text-secondary); cursor: pointer; border-radius: var(--r-sm); transition: background 0.12s, color 0.12s; }
+  .sidebar-sub-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+  .sidebar-sub-item.active { background: var(--accent-dim); color: var(--text-accent); }
+  .sidebar-sub-item.empty { color: var(--text-muted); font-style: italic; }
+
+  /* FILE GRID */
+  .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 16px; }
+  .file-card { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-md); overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .file-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(107,142,191,0.12); }
+  .file-card-thumb { height: 200px; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .file-card-thumb canvas { max-width: 100%; max-height: 100%; display: block; }
+  .file-card-name { padding: 8px 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
+  .file-folder-section { margin-bottom: 20px; }
+  .file-folder-header { display: flex; align-items: center; gap: 6px; padding: 8px 0; font-size: 13px; font-weight: 600; color: var(--text-primary); cursor: pointer; user-select: none; }
+  .file-folder-header .chevron { font-size: 10px; transition: transform 0.15s; display: inline-block; }
+  .file-folder-header .chevron.open { transform: rotate(90deg); }
+  .products-empty { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 13px; }
+
+  /* PRODUCT TOTALS */
+  .product-totals { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .product-total-card { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-md); padding: 12px 18px; min-width: 140px; }
+  .product-total-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .product-total-value { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
+  .product-total-unit { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+  /* PART SECTION */
+  .part-section { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-lg); margin-bottom: 12px; overflow: hidden; }
+  .part-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; transition: background 0.12s; }
+  .part-header:hover { background: var(--bg-card-hover); }
+  .part-header .chevron { font-size: 10px; transition: transform 0.15s; display: inline-block; flex-shrink: 0; }
+  .part-header .chevron.open { transform: rotate(90deg); }
+  .part-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .part-view-btn { font-size: 10px; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--border-mid); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; gap: 3px; }
+  .part-view-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .part-qty { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+  .part-qty-val { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--accent); padding: 1px 4px; }
+  .part-time-badge { font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); white-space: nowrap; }
+  .part-analyze-btn { font-size: 11px; padding: 4px 12px; border-radius: var(--r-sm); border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .part-analyze-btn:hover { background: var(--accent-dim); }
+  .part-analyze-btn.loading { opacity: 0.5; pointer-events: none; }
+  .part-body { border-top: 1px solid var(--border-faint); padding: 0; display: none; }
+  .part-body.open { display: block; }
+
+  /* PART ROUTE SUMMARY */
+  .part-route { border-bottom: 1px solid var(--border-faint); background: var(--bg-elevated); }
+  .part-route-header { display: flex; align-items: center; gap: 8px; padding: 9px 16px; cursor: pointer; user-select: none; font-size: 12px; }
+  .part-route-header:hover { background: var(--accent-dim); }
+  .part-route-badge { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); font-weight: 600; }
+  .part-route-ops { font-size: 11px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .part-route-body { padding: 10px 16px; border-top: 1px solid var(--border-faint); display: none; }
+  .part-route-body.open { display: block; }
+  .part-route-justif-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .part-route-justif { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* PART OPERATIONS TABLE */
+  .part-ops-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .part-ops-table th { background: var(--bg-elevated); padding: 7px 10px; text-align: left; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-faint); }
+  .part-ops-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-faint); color: var(--text-secondary); vertical-align: top; }
+  .part-ops-table tr:last-child td { border-bottom: none; }
+  .part-ops-table .op-num { font-family: var(--font-mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
+  .part-ops-table .time-val { font-family: var(--font-mono); font-weight: 600; }
+  .part-ops-table .ai-val { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-radius: 3px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); white-space: nowrap; margin-bottom: 3px; }
+  .part-ops-table .conf-input { width: 70px; padding: 3px 6px; border: 1px solid var(--border-mid); border-radius: 4px; background: var(--bg-base); color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; text-align: right; }
+  .part-ops-table .conf-input:focus { border-color: var(--accent); outline: none; }
+
+  /* PART JUSTIFICATION ROW */
+  .part-justif { border-bottom: 1px solid var(--border-faint); }
+  .part-justif-toggle { cursor: pointer; padding: 0 4px; opacity: 0.4; transition: opacity 0.15s; }
+  .part-justif-toggle:hover { opacity: 1; }
+  .part-justif-block { display: flex; background: rgba(15,17,23,0.5); border-top: 1px solid var(--border-faint); }
+  :root.light .part-justif-block { background: rgba(230,235,245,0.6); }
+  .part-justif-stripe { width: 2px; background: var(--accent); opacity: 0.35; flex-shrink: 0; }
+  .part-justif-inner { padding: 8px 14px; flex: 1; }
+  .part-justif-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+  .part-justif-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* ANALYZE ALL BUTTON */
+  .analyze-all-btn { padding: 8px 20px; border-radius: var(--r-md); border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .analyze-all-btn:hover { background: var(--accent); color: #fff; }
+  .analyze-all-btn.loading { opacity: 0.5; pointer-events: none; }
+
+  /* PART DRAWING ANALYSIS */
+  .part-drawing-btn { font-size: 10px; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; gap: 3px; }
+  .part-drawing-btn:hover { background: var(--gold-dim); }
+  .part-drawing-btn.loading { opacity: 0.5; pointer-events: none; }
+  .part-remarks { border-top: 1px solid var(--border-faint); }
+  .part-remarks-header { padding: 8px 16px; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-elevated); display: flex; align-items: center; gap: 6px; }
+  .part-remarks-header .remark-count { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--gold-dim); color: var(--gold); }
+  .part-remark { padding: 10px 16px; border-bottom: 1px solid var(--border-faint); }
+  .part-remark:last-child { border-bottom: none; }
+  .part-remark-badges { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
+  .part-remark-badge { font-family: var(--font-mono); font-size: 8px; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .part-remark-badge.zam { background: rgba(220,80,80,0.14); color: #CC6060; border: 1px solid rgba(220,80,80,0.3); }
+  .part-remark-badge.opt { background: rgba(80,140,220,0.13); color: #6090CC; border: 1px solid rgba(80,140,220,0.3); }
+  .part-remark-badge.high { background: rgba(220,80,80,0.1); color: #BB5050; }
+  .part-remark-badge.mid { background: var(--gold-dim); color: var(--gold); }
+  .part-remark-badge.low { background: var(--bg-elevated); color: var(--text-muted); }
+  .part-remark-title { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+  .part-remark-desc { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
+  .part-remark-sug { font-size: 11px; color: var(--text-accent); margin-top: 5px; padding: 5px 9px; background: var(--accent-dim); border-radius: 4px; border-left: 2px solid var(--accent); line-height: 1.45; }
+  .part-summary { padding: 10px 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; background: var(--bg-elevated); border-bottom: 1px solid var(--border-faint); }
+
+
   @media (max-width: 1100px) {
     .page-wrapper { grid-template-columns: 1fr; }
     .sidebar { display: none; }
@@ -414,6 +531,9 @@
       <svg viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M2 7h7M2 10.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       История расчётов
     </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Изделия</div>
+    <div id="sidebar-products-tree"><div style="padding:4px 10px;font-size:11px;color:var(--text-muted)">Загрузка...</div></div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section-label">Текущий сеанс</div>
     <div class="sidebar-meta">
@@ -747,6 +867,54 @@
           </div>
           <div id="drawing-status" style="padding:10px 16px;display:none;font-size:12px;"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Панель каталога изделий -->
+    <div class="products-panel" id="products-panel">
+      <div class="products-header">
+        <div class="breadcrumb" id="products-breadcrumb">
+          <span>Изделия</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div class="products-title" id="products-title">Каталог изделий</div>
+          <div style="display:flex;gap:8px;">
+            <button class="analyze-all-btn" id="btn-toggle-all" onclick="toggleAllParts()" style="display:none">
+              <svg viewBox="0 0 12 12" fill="none" width="11" height="11" style="vertical-align:-1px;margin-right:3px"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span id="toggle-all-label">Раскрыть всё</span>
+            </button>
+            <button class="analyze-all-btn" id="btn-analyze-all" onclick="analyzeAllParts()" style="display:none">Рассчитать всё</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-totals" id="product-totals" style="display:none">
+        <div class="product-total-card">
+          <div class="product-total-label">t_шт итого</div>
+          <div class="product-total-value" id="total-tsht">—</div>
+          <div class="product-total-unit">минут</div>
+        </div>
+        <div class="product-total-card">
+          <div class="product-total-label">t_пз итого</div>
+          <div class="product-total-value" id="total-tpz">—</div>
+          <div class="product-total-unit">минут</div>
+        </div>
+        <div class="product-total-card" style="border-color:var(--accent);border-width:1.5px">
+          <div class="product-total-label">Общее время</div>
+          <div class="product-total-value" id="total-sum" style="color:var(--accent)">—</div>
+          <div class="product-total-unit">шт + пз (мин)</div>
+        </div>
+        <div class="product-total-card">
+          <div class="product-total-label">Деталей</div>
+          <div class="product-total-value" id="total-parts">—</div>
+          <div class="product-total-unit">рассчитано</div>
+        </div>
+        <button class="analyze-all-btn" id="btn-export-excel" onclick="exportProductToExcel()" style="display:none;margin-left:auto">
+          <svg viewBox="0 0 14 14" fill="none" width="13" height="13" style="vertical-align:-2px;margin-right:4px"><path d="M2 1h7l3 3v8a1 1 0 01-1 1H2a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.1"/><path d="M9 1v3h3" stroke="currentColor" stroke-width="1" opacity="0.4"/><path d="M4 7l2.5 3L9 7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Excel
+        </button>
+      </div>
+      <div id="products-parts-list">
+        <div class="products-empty">Выберите изделие в боковой панели</div>
       </div>
     </div>
 
@@ -1397,23 +1565,32 @@
     return input && input.files.length > 0 ? input.files[0] : null;
   }
 
-  // Переключение на вкладку анализа чертежа
+  // Переключение на вкладку анализа чертежа / изделий
   // (navTo расширяем здесь, патчим существующую функцию)
   const _origNavTo = navTo;
   navTo = function(section, el) {
     const drawingPanel = document.getElementById('drawing-panel');
+    const productsPanel = document.getElementById('products-panel');
     const normContent = document.getElementById('norm-content');
 
+    // Снимаем active со всех nav-элементов
+    document.querySelectorAll('.nav-pill, .sidebar-item, .sidebar-sub-item').forEach(x => x.classList.remove('active'));
+    if (el) el.classList.add('active');
+
     if (section === 'drawing') {
-      document.querySelectorAll('.nav-pill, .sidebar-item').forEach(x => x.classList.remove('active'));
-      if (el) el.classList.add('active');
       drawingPanel.classList.add('visible');
+      productsPanel.classList.remove('visible');
       if (normContent) normContent.style.display = 'none';
       drawingPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Подгружаем чертёж если он уже загружен
       syncDrawingFromMain();
+    } else if (section === 'products') {
+      productsPanel.classList.add('visible');
+      drawingPanel.classList.remove('visible');
+      if (normContent) normContent.style.display = 'none';
+      productsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       drawingPanel.classList.remove('visible');
+      productsPanel.classList.remove('visible');
       if (normContent) normContent.style.display = '';
       _origNavTo(section, el);
     }
@@ -1646,22 +1823,699 @@
     renderHighlights();
   }
 
+  // ─── PRODUCTS CATALOG ──────────────────────────────────────────────────────
+
+  let _productsCurrentType = '';
+  let _productsCurrentVariant = '';
+  let _productsFiles = [];       // [{path, name, type}]
+  let _productsResults = {};     // filename → {operations, analyzed_at}
+  let _productsQty = {};         // filename → количество (default 1)
+
+  async function loadProductsTree() {
+    try {
+      const resp = await fetch('/api/products/tree');
+      const data = await resp.json();
+      renderSidebarProductsTree(data.types || []);
+    } catch (e) {
+      console.error('Ошибка загрузки дерева изделий:', e);
+      const el = document.getElementById('sidebar-products-tree');
+      if (el) el.innerHTML = '<div style="padding:4px 10px;font-size:11px;color:var(--text-muted)">Ошибка загрузки</div>';
+    }
+  }
+
+  function renderSidebarProductsTree(types) {
+    const container = document.getElementById('sidebar-products-tree');
+    if (!container) return;
+    if (!types.length) {
+      container.innerHTML = '<div style="padding:4px 10px;font-size:11px;color:var(--text-muted)">Нет изделий</div>';
+      return;
+    }
+    let html = '';
+    types.forEach(t => {
+      const count = t.variants.length;
+      html += `<div class="sidebar-tree-toggle" onclick="toggleProductType(this)">
+        <span class="chevron">›</span>
+        <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><path d="M2 3h10v1H2zm0 3.5h8v1H2zm0 3.5h6v1H2z" fill="currentColor" opacity="0.6"/></svg>
+        ${esc(t.name)}
+        <span class="tree-count">${count}</span>
+      </div>`;
+      html += '<div class="sidebar-tree-children">';
+      t.variants.forEach(v => {
+        const cls = v.empty ? 'sidebar-sub-item empty' : 'sidebar-sub-item';
+        const label = v.name.replace(t.name.replace(/ки$/, 'ка') + ' ', '') || v.name;
+        html += `<div class="${cls}" data-type="${esc(t.name)}" data-variant="${esc(v.name)}" onclick="openProductVariant(this.dataset.type, this.dataset.variant, this)">
+          <svg viewBox="0 0 12 12" fill="none" width="11" height="11"><rect x="1" y="2" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1" opacity="0.5"/><path d="M1 4h10" stroke="currentColor" stroke-width="0.8" opacity="0.3"/></svg>
+          ${esc(label)}${v.empty ? ' <span style="font-size:9px;opacity:0.5">(пусто)</span>' : ''}
+        </div>`;
+      });
+      html += '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function toggleProductType(el) {
+    const children = el.nextElementSibling;
+    const chevron = el.querySelector('.chevron');
+    if (!children) return;
+    const isOpen = children.classList.toggle('open');
+    if (isOpen) chevron.classList.add('open');
+    else chevron.classList.remove('open');
+  }
+
+  async function openProductVariant(type, variant, el) {
+    navTo('products', el);
+    _productsCurrentType = type;
+    _productsCurrentVariant = variant;
+    _productsResults = {};
+    _productsQty = {};
+
+    const breadcrumb = document.getElementById('products-breadcrumb');
+    const title = document.getElementById('products-title');
+    const list = document.getElementById('products-parts-list');
+
+    breadcrumb.innerHTML = `<span>Изделия</span><span style="color:var(--text-muted)"> › </span><span>${esc(type)}</span><span style="color:var(--text-muted)"> › </span><span style="color:var(--text-primary)">${esc(variant)}</span>`;
+    title.textContent = variant;
+    list.innerHTML = '<div class="products-empty">Загрузка...</div>';
+    document.getElementById('product-totals').style.display = 'none';
+    document.getElementById('btn-analyze-all').style.display = 'none';
+
+    try {
+      // Загружаем список файлов и кешированные результаты параллельно
+      const [filesResp, resultsResp] = await Promise.all([
+        fetch(`/api/products/files?type=${encodeURIComponent(type)}&variant=${encodeURIComponent(variant)}`),
+        fetch(`/api/products/results?type=${encodeURIComponent(type)}&variant=${encodeURIComponent(variant)}`)
+      ]);
+      const filesData = await filesResp.json();
+      const resultsData = await resultsResp.json();
+
+      if (filesData.error) {
+        list.innerHTML = `<div class="products-empty">${esc(filesData.error)}</div>`;
+        return;
+      }
+
+      // Собираем плоский список PDF-файлов
+      _productsFiles = flattenFiles(filesData.tree || []);
+      _productsResults = resultsData.results || {};
+      // Восстанавливаем количества из кеша
+      Object.keys(_productsResults).forEach(fn => {
+        if (_productsResults[fn].qty) _productsQty[fn] = _productsResults[fn].qty;
+      });
+
+      if (!_productsFiles.length) {
+        list.innerHTML = '<div class="products-empty">Файлы не найдены</div>';
+        return;
+      }
+
+      document.getElementById('btn-analyze-all').style.display = '';
+      document.getElementById('btn-toggle-all').style.display = '';
+      _allPartsExpanded = false;
+
+      // Восстанавливаем BOM из кеша или извлекаем из сборочного чертежа
+      try {
+        const cachedBom = _productsResults['_bom'];
+        if (cachedBom && Array.isArray(cachedBom) && cachedBom.length) {
+          applyBomToFiles(cachedBom);
+        } else {
+          const assemblyFile = _productsFiles.find(f => /СБ/i.test(f.name) || /сборочн/i.test(f.name));
+          if (assemblyFile) {
+            extractBomFromAssembly(type, variant, assemblyFile.path);
+          }
+        }
+      } catch (bomErr) {
+        console.error('BOM error:', bomErr);
+      }
+
+      renderPartsPanel();
+
+    } catch (e) {
+      console.error('openProductVariant error:', e);
+      list.innerHTML = '<div class="products-empty">Ошибка загрузки: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  function flattenFiles(tree) {
+    let files = [];
+    tree.forEach(item => {
+      if (item.type === 'file') files.push(item);
+      if (item.type === 'dir' && item.children) {
+        item.children.forEach(child => {
+          if (child.type === 'file') files.push(child);
+        });
+      }
+    });
+    // Сборочный чертёж (СБ) отделяем — он не деталь, но нужен для BOM
+    return files;
+  }
+
+  function isAssemblyDrawing(filename) {
+    return /\bСБ\b/i.test(filename) || /сборочн/i.test(filename);
+  }
+
+  function renderPartsPanel() {
+    const list = document.getElementById('products-parts-list');
+    list.innerHTML = '';
+
+    _productsFiles.forEach((file, idx) => {
+      const cached = _productsResults[file.name];
+      const ops = cached ? cached.operations : null;
+      const routeInfo = cached ? cached.route : null;
+      const section = createPartSection(file, idx, ops, routeInfo);
+      list.appendChild(section);
+    });
+
+    updateProductTotals();
+  }
+
+  function createPartSection(file, idx, operations, routeInfo) {
+    const section = document.createElement('div');
+    section.className = 'part-section';
+    section.id = 'part-' + idx;
+
+    // Имя детали из результата или из имени файла
+    const partName = operations && operations.length ? operations[0]['деталь'] || file.name : file.name;
+    const hasOps = operations && operations.length > 0;
+    const qty = _productsQty[file.name] || 1;
+    const cachedDA = _productsResults[file.name] && _productsResults[file.name].drawing_analysis;
+    const hasDrawingAnalysis = !!cachedDA;
+    const isAssembly = isAssemblyDrawing(file.name);
+
+    // Суммы времени для этой детали
+    let sumTsht = 0, sumTpz = 0;
+    if (hasOps) {
+      operations.forEach(op => {
+        sumTsht += parseFloat(op['t_шт_предложено']) || 0;
+        sumTpz += parseFloat(op['t_пз_предложено']) || 0;
+      });
+    }
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'part-header';
+    header.innerHTML = `
+      <span class="chevron${hasOps ? ' open' : ''}">›</span>
+      <svg viewBox="0 0 14 14" fill="none" width="14" height="14" style="flex-shrink:0;opacity:0.5">
+        <path d="M3 2h5l3 3v7a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.1"/>
+        <path d="M8 2v3h3" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      </svg>
+      <span class="part-name" title="${esc(file.name)}">${esc(partName)}</span>
+      <button class="part-view-btn" onclick="event.stopPropagation(); viewPartPdf(${idx})" title="Просмотр чертежа">
+        <svg viewBox="0 0 12 12" fill="none" width="11" height="11"><rect x="1" y="2" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1"/><circle cx="6" cy="6" r="2" stroke="currentColor" stroke-width="0.8"/><circle cx="6" cy="6" r="0.7" fill="currentColor"/></svg>
+        Чертёж
+      </button>
+      <button class="part-drawing-btn" id="btn-drawing-${idx}" onclick="event.stopPropagation(); analyzePartDrawing(${idx})" title="Анализ чертежа">
+        <svg viewBox="0 0 12 12" fill="none" width="11" height="11"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1"/></svg>
+        ${hasDrawingAnalysis ? 'Замечания' : 'Анализ чертежа'}
+      </button>
+      <span class="part-qty">
+        <span>кол-во:</span>
+        <span class="part-qty-val">${qty}</span>
+        <span>шт</span>
+      </span>
+      ${hasOps ? `<span class="part-time-badge">1шт: ${sumTsht.toFixed(1)}+${sumTpz.toFixed(1)} | ${qty}шт: ${(sumTsht*qty).toFixed(1)}+${(sumTpz*qty).toFixed(1)}</span>` : ''}
+      ${isAssembly ? '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:var(--gold-dim);color:var(--gold);white-space:nowrap">СБ</span>' : ''}
+      <button class="part-analyze-btn" id="btn-part-${idx}" onclick="event.stopPropagation(); analyzePart(${idx})">${hasOps ? 'Пересчитать' : 'Рассчитать'}</button>
+    `;
+    header.onclick = () => {
+      const body = section.querySelector('.part-body');
+      const chev = header.querySelector('.chevron');
+      body.classList.toggle('open');
+      chev.classList.toggle('open');
+    };
+    section.appendChild(header);
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'part-body' + (hasOps ? ' open' : '');
+    body.id = 'part-body-' + idx;
+
+    if (hasOps) {
+      // Блок маршрута (если есть информация)
+      const routeBlock = createRouteBlock(routeInfo, operations, idx);
+      if (routeBlock) body.appendChild(routeBlock);
+
+      // Таблица операций
+      body.appendChild(createOpsTable(operations, idx));
+    } else {
+      body.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center;">Нажмите «Рассчитать» для анализа</div>';
+    }
+
+    // Блок замечаний по чертежу (если есть)
+    if (hasDrawingAnalysis) {
+      body.appendChild(createDrawingRemarksBlock(cachedDA, idx));
+    }
+
+    section.appendChild(body);
+    return section;
+  }
+
+  function createRouteBlock(routeInfo, operations, partIdx) {
+    // Пытаемся извлечь маршрут из обоснования первой операции
+    let routeText = '';
+    let routeJustif = '';
+
+    if (routeInfo && routeInfo.номер) {
+      routeText = routeInfo.операции || '';
+      routeJustif = routeInfo.обоснование || '';
+    } else if (operations && operations.length) {
+      // Ищем в обосновании первой операции «Выбран маршрут»
+      const firstJustif = operations[0]['обоснование'] || '';
+      const match = firstJustif.match(/[Вв]ыбран маршрут\s*(M-\d+[^.]*)/i);
+      if (match) {
+        routeText = match[1];
+        routeJustif = firstJustif;
+      }
+    }
+
+    if (!routeText && !routeJustif) return null;
+
+    const block = document.createElement('div');
+    block.className = 'part-route';
+    block.innerHTML = `
+      <div class="part-route-header" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="part-route-badge">Маршрут</span>
+        <span class="part-route-ops">${esc(routeText)}</span>
+        <svg viewBox="0 0 10 10" fill="none" width="10" height="10" style="opacity:0.4;flex-shrink:0"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="part-route-body">
+        <div class="part-route-justif-label">Обоснование выбора маршрута</div>
+        <div class="part-route-justif">${esc(routeJustif || '—')}</div>
+      </div>
+    `;
+    return block;
+  }
+
+  function createOpsTable(operations, partIdx) {
+    const wrapper = document.createElement('div');
+
+    const table = document.createElement('table');
+    table.className = 'part-ops-table';
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th style="width:24px"></th>
+          <th>Операция</th>
+          <th>Оборудование</th>
+          <th>Режимы</th>
+          <th style="text-align:center">t_шт (ИИ)</th>
+          <th style="text-align:center">t_шт (техн.)</th>
+          <th style="text-align:center">t_пз (ИИ)</th>
+          <th style="text-align:center">t_пз (техн.)</th>
+        </tr>
+      </thead>
+    `;
+
+    const tbody = document.createElement('tbody');
+    operations.forEach((op, i) => {
+      const uid = `p${partIdx}-op${i}`;
+      const tsht = parseFloat(op['t_шт_предложено'] || 0);
+      const tpz = parseFloat(op['t_пз_предложено'] || 0);
+
+      // Строка операции
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="part-justif-toggle" onclick="event.stopPropagation(); var r=document.getElementById('pj-${uid}'); r.style.display=r.style.display==='none'?'':'none';">
+            <svg viewBox="0 0 10 10" fill="none" width="10" height="10"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </td>
+        <td class="op-num">${esc(op['операция'] || '—')}</td>
+        <td style="font-size:11px">${esc(op['оборудование'] || '—')}</td>
+        <td style="font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(op['режимы'] || '')}">${esc(op['режимы'] || '—')}</td>
+        <td style="text-align:center"><span class="ai-val">AI ${tsht.toFixed(1)}</span></td>
+        <td style="text-align:center"><input class="conf-input" type="number" step="0.1" min="0" value="${tsht.toFixed(1)}" data-part="${partIdx}" data-op="${i}" data-field="t_шт"></td>
+        <td style="text-align:center"><span class="ai-val">AI ${tpz.toFixed(1)}</span></td>
+        <td style="text-align:center"><input class="conf-input" type="number" step="0.1" min="0" value="${tpz.toFixed(1)}" data-part="${partIdx}" data-op="${i}" data-field="t_пз"></td>
+      `;
+      tbody.appendChild(tr);
+
+      // Строка обоснования (скрытая)
+      const jr = document.createElement('tr');
+      jr.id = 'pj-' + uid;
+      jr.style.display = 'none';
+      jr.innerHTML = `
+        <td colspan="8" style="padding:0">
+          <div class="part-justif-block">
+            <div class="part-justif-stripe"></div>
+            <div class="part-justif-inner">
+              <div class="part-justif-label">Обоснование ИИ</div>
+              <div class="part-justif-text">${esc(op['обоснование'] || '—')}</div>
+            </div>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(jr);
+    });
+
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+    return wrapper;
+  }
+
+  function updateProductTotals() {
+    let totalTsht = 0, totalTpz = 0, analyzed = 0;
+    _productsFiles.forEach(file => {
+      const cached = _productsResults[file.name];
+      if (cached && cached.operations) {
+        analyzed++;
+        const qty = _productsQty[file.name] || 1;
+        cached.operations.forEach(op => {
+          totalTsht += (parseFloat(op['t_шт_предложено']) || 0) * qty;
+          totalTpz += (parseFloat(op['t_пз_предложено']) || 0) * qty;
+        });
+      }
+    });
+
+    const totalsEl = document.getElementById('product-totals');
+    const excelBtn = document.getElementById('btn-export-excel');
+    if (analyzed > 0) {
+      totalsEl.style.display = '';
+      excelBtn.style.display = '';
+      document.getElementById('total-tsht').textContent = totalTsht.toFixed(1);
+      document.getElementById('total-tpz').textContent = totalTpz.toFixed(1);
+      document.getElementById('total-sum').textContent = (totalTsht + totalTpz).toFixed(1);
+      document.getElementById('total-parts').textContent = `${analyzed} / ${_productsFiles.length}`;
+    } else {
+      totalsEl.style.display = 'none';
+      excelBtn.style.display = 'none';
+    }
+  }
+
+  async function analyzePart(idx) {
+    const file = _productsFiles[idx];
+    if (!file) return;
+
+    const btn = document.getElementById('btn-part-' + idx);
+    const body = document.getElementById('part-body-' + idx);
+    if (btn) { btn.classList.add('loading'); btn.textContent = 'Анализ...'; }
+    if (body) { body.classList.add('open'); body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">⏳ Анализ... (может занять до минуты)</div>'; }
+
+    // Раскрываем секцию
+    const section = document.getElementById('part-' + idx);
+    if (section) section.querySelector('.chevron').classList.add('open');
+
+    try {
+      const resp = await fetch('/api/products/analyze_part', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: _productsCurrentType,
+          variant: _productsCurrentVariant,
+          filename: file.path
+        })
+      });
+      const data = await resp.json();
+      if (data.error) {
+        body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка: ${esc(data.error)}</div>`;
+        if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
+        return;
+      }
+
+      // Сохраняем результат
+      const routeInfo = data.route || null;
+      _productsResults[file.name] = { operations: data.operations, route: routeInfo, analyzed_at: new Date().toISOString() };
+
+      // Перерисовываем секцию
+      const newSection = createPartSection(file, idx, data.operations, routeInfo);
+      section.replaceWith(newSection);
+      // Раскрываем
+      newSection.querySelector('.part-body').classList.add('open');
+      newSection.querySelector('.chevron').classList.add('open');
+
+      updateProductTotals();
+
+    } catch (e) {
+      body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка сети: ${esc(e.message)}</div>`;
+      if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
+    }
+  }
+
+  async function analyzePartDrawing(idx) {
+    const file = _productsFiles[idx];
+    if (!file) return;
+
+    const btn = document.getElementById('btn-drawing-' + idx);
+    if (btn) { btn.classList.add('loading'); btn.textContent = 'Анализ...'; }
+
+    try {
+      const resp = await fetch('/api/products/analyze_drawing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: _productsCurrentType,
+          variant: _productsCurrentVariant,
+          filename: file.path
+        })
+      });
+      const data = await resp.json();
+      if (data.error) {
+        if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
+        alert('Ошибка: ' + data.error);
+        return;
+      }
+
+      // Сохраняем
+      if (!_productsResults[file.name]) _productsResults[file.name] = {};
+      _productsResults[file.name].drawing_analysis = data;
+
+      // Перерисовываем секцию
+      const cached = _productsResults[file.name];
+      const ops = cached ? cached.operations : null;
+      const routeInfo = cached ? cached.route : null;
+      const section = document.getElementById('part-' + idx);
+      const newSection = createPartSection(file, idx, ops, routeInfo);
+      section.replaceWith(newSection);
+      newSection.querySelector('.part-body').classList.add('open');
+      newSection.querySelector('.chevron').classList.add('open');
+
+    } catch (e) {
+      if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
+    }
+  }
+
+  function createDrawingRemarksBlock(analysis, partIdx) {
+    const div = document.createElement('div');
+    div.className = 'part-remarks';
+
+    const remarks = analysis.remarks || [];
+    const summary = analysis.summary || '';
+    const zamCount = remarks.filter(r => r.type === 'замечание').length;
+    const optCount = remarks.filter(r => r.type === 'оптимизация').length;
+
+    let html = `<div class="part-remarks-header">
+      Анализ чертежа
+      ${zamCount ? `<span class="remark-count" style="background:rgba(220,80,80,0.14);color:#CC6060">${zamCount} замеч.</span>` : ''}
+      ${optCount ? `<span class="remark-count">${optCount} оптим.</span>` : ''}
+    </div>`;
+
+    if (summary) {
+      html += `<div class="part-summary">${esc(summary)}</div>`;
+    }
+
+    remarks.forEach(r => {
+      const typeClass = r.type === 'замечание' ? 'zam' : 'opt';
+      const prioClass = r.priority === 'высокий' ? 'high' : r.priority === 'средний' ? 'mid' : 'low';
+      html += `<div class="part-remark">
+        <div class="part-remark-badges">
+          <span class="part-remark-badge ${typeClass}">${esc(r.type)}</span>
+          <span class="part-remark-badge ${prioClass}">${esc(r.priority)}</span>
+          <span class="part-remark-badge" style="background:var(--bg-elevated);color:var(--text-muted)">${esc(r.category || '')}</span>
+        </div>
+        <div class="part-remark-title">${esc(r.title || '')}</div>
+        <div class="part-remark-desc">${esc(r.description || '')}</div>
+        ${r.suggestion ? `<div class="part-remark-sug">${esc(r.suggestion)}</div>` : ''}
+      </div>`;
+    });
+
+    div.innerHTML = html;
+    return div;
+  }
+
+  let _allPartsExpanded = false;
+
+  function toggleAllParts() {
+    _allPartsExpanded = !_allPartsExpanded;
+    document.querySelectorAll('.part-section').forEach(section => {
+      const body = section.querySelector('.part-body');
+      const chev = section.querySelector('.part-header .chevron');
+      if (_allPartsExpanded) {
+        if (body) body.classList.add('open');
+        if (chev) chev.classList.add('open');
+      } else {
+        if (body) body.classList.remove('open');
+        if (chev) chev.classList.remove('open');
+      }
+    });
+    const label = document.getElementById('toggle-all-label');
+    const svg = document.getElementById('btn-toggle-all').querySelector('svg');
+    if (_allPartsExpanded) {
+      label.textContent = 'Свернуть всё';
+      svg.style.transform = 'rotate(180deg)';
+    } else {
+      label.textContent = 'Раскрыть всё';
+      svg.style.transform = '';
+    }
+  }
+
+  async function extractBomFromAssembly(type, variant, assemblyPath) {
+    try {
+      const resp = await fetch('/api/products/extract_bom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, variant, assembly_file: assemblyPath })
+      });
+      const data = await resp.json();
+      if (data.bom && data.bom.length) {
+        _productsResults['_bom'] = data.bom;
+        applyBomToFiles(data.bom);
+        renderPartsPanel();
+      }
+    } catch (e) {
+      console.error('Ошибка извлечения BOM:', e);
+    }
+  }
+
+  function applyBomToFiles(bom) {
+    // Сопоставляем BOM с файлами по названию детали
+    _productsFiles.forEach(file => {
+      const fname = file.name.toLowerCase();
+      for (const item of bom) {
+        const bomName = (item['деталь'] || '').toLowerCase();
+        if (!bomName) continue;
+        // Проверяем есть ли совпадение: имя детали из BOM содержится в имени файла или наоборот
+        // Также проверяем совпадение с результатом анализа (название детали из операций)
+        const cached = _productsResults[file.name];
+        const partName = cached && cached.operations && cached.operations.length
+          ? (cached.operations[0]['деталь'] || '').toLowerCase() : '';
+
+        if (bomName && (fname.includes(bomName) || bomName.includes(fname.replace('.pdf','').substring(0,10)) ||
+            (partName && (partName.includes(bomName) || bomName.includes(partName))))) {
+          _productsQty[file.name] = item['количество'] || 1;
+          break;
+        }
+      }
+    });
+  }
+
+  function onPartQtyChange(idx, val) {
+    const file = _productsFiles[idx];
+    if (!file) return;
+    const qty = Math.max(1, parseInt(val) || 1);
+    _productsQty[file.name] = qty;
+
+    // Сохраняем кол-во в кеш на сервере
+    if (_productsResults[file.name]) {
+      _productsResults[file.name].qty = qty;
+      fetch('/api/products/save_qty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: _productsCurrentType,
+          variant: _productsCurrentVariant,
+          filename: file.name,
+          qty: qty
+        })
+      }).catch(() => {});
+    }
+
+    // Пересчитаем бейдж и итоги
+    renderPartsPanel();
+  }
+
+  function viewPartPdf(idx) {
+    const file = _productsFiles[idx];
+    if (!file) return;
+    const url = `/api/products/pdf?type=${encodeURIComponent(_productsCurrentType)}&variant=${encodeURIComponent(_productsCurrentVariant)}&path=${encodeURIComponent(file.path)}`;
+    window.open(url, '_blank');
+  }
+
+  function exportProductToExcel() {
+    const sep = ';';
+    const rows = [];
+    // Заголовок
+    rows.push(['Изделие', 'Файл', 'Деталь', 'Кол-во', 'Операция', 'Оборудование', 'Режимы', 't_шт (1шт)', 't_пз (1шт)', 't_шт (всего)', 't_пз (всего)', 'Обоснование'].join(sep));
+
+    let totalTsht = 0, totalTpz = 0;
+    _productsFiles.forEach(file => {
+      const cached = _productsResults[file.name];
+      if (!cached || !cached.operations) return;
+      const qty = _productsQty[file.name] || 1;
+      cached.operations.forEach(op => {
+        const tsht = parseFloat(op['t_шт_предложено']) || 0;
+        const tpz = parseFloat(op['t_пз_предложено']) || 0;
+        totalTsht += tsht * qty;
+        totalTpz += tpz * qty;
+        rows.push([
+          _productsCurrentVariant,
+          file.name,
+          op['деталь'] || '',
+          qty,
+          op['операция'] || '',
+          op['оборудование'] || '',
+          op['режимы'] || '',
+          tsht.toFixed(1),
+          tpz.toFixed(1),
+          (tsht * qty).toFixed(1),
+          (tpz * qty).toFixed(1),
+          (op['обоснование'] || '').replace(/[\r\n;]/g, ' ')
+        ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(sep));
+      });
+    });
+
+    // Итоговая строка
+    rows.push('');
+    rows.push(['', '', '', '', '', '', 'ИТОГО (с кол-вом):', '', '', totalTsht.toFixed(1), totalTpz.toFixed(1), 'Общее: ' + (totalTsht + totalTpz).toFixed(1)].map(v => '"' + v + '"').join(sep));
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (_productsCurrentVariant || 'Изделие') + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function analyzeAllParts() {
+    const btn = document.getElementById('btn-analyze-all');
+    btn.classList.add('loading');
+    btn.textContent = 'Анализ...';
+
+    for (let i = 0; i < _productsFiles.length; i++) {
+      const file = _productsFiles[i];
+      if (_productsResults[file.name] && _productsResults[file.name].operations) continue;
+      btn.textContent = `Анализ ${i + 1}/${_productsFiles.length}...`;
+      try {
+        await analyzePart(i);
+      } catch (e) {
+        console.error('Ошибка анализа', file.name, e);
+      }
+    }
+
+    btn.classList.remove('loading');
+    btn.textContent = 'Рассчитать всё';
+  }
+
   // Оборачиваем main-content в div с id для скрытия при переключении вкладок
   document.addEventListener('DOMContentLoaded', () => {
     const main = document.querySelector('.main-content');
     if (!main) return;
-    // Всё кроме drawing-panel оборачиваем в norm-content
+    // Всё кроме drawing-panel и products-panel оборачиваем в norm-content
     const drawingPanel = document.getElementById('drawing-panel');
+    const productsPanel = document.getElementById('products-panel');
     const normDiv = document.createElement('div');
     normDiv.id = 'norm-content';
-    // Перемещаем все дочерние узлы кроме drawing-panel в norm-content
+    // Перемещаем все дочерние узлы кроме drawing-panel и products-panel в norm-content
     const children = Array.from(main.children);
     children.forEach(child => {
-      if (child !== drawingPanel) normDiv.appendChild(child);
+      if (child !== drawingPanel && child !== productsPanel) normDiv.appendChild(child);
     });
     main.insertBefore(normDiv, drawingPanel);
+    // Загружаем дерево изделий
+    loadProductsTree();
   });
+
 </script>
+
 
 </body>
 </html>

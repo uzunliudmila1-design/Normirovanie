@@ -6,7 +6,7 @@ import sqlite3
 import subprocess
 import tempfile
 from datetime import datetime
-from flask import Flask, request, jsonify, render_template, g
+from flask import Flask, request, jsonify, render_template, g, send_file
 from anthropic import Anthropic
 from dotenv import load_dotenv
 try:
@@ -28,6 +28,40 @@ load_dotenv()
 # ─── База оборудования завода ─────────────────────────────────────────────────
 EQUIPMENT_DB_PATH = os.path.join(os.path.dirname(__file__), "Данные", "Обороудование.xlsx")
 _EQUIPMENT_TEXT = None   # кешируем результат форматирования
+
+# ─── Лог анализа ──────────────────────────────────────────────────────────────
+import threading
+_analysis_logs = []          # [{ts, level, source, message}]
+_analysis_logs_lock = threading.Lock()
+_ANALYSIS_LOG_MAX = 500
+
+
+def alog(source, message, level="info"):
+    """Добавляет запись в лог анализа."""
+    entry = {
+        "ts": datetime.now().strftime("%H:%M:%S"),
+        "level": level,
+        "source": source,
+        "message": message
+    }
+    with _analysis_logs_lock:
+        _analysis_logs.append(entry)
+        if len(_analysis_logs) > _ANALYSIS_LOG_MAX:
+            _analysis_logs[:] = _analysis_logs[-_ANALYSIS_LOG_MAX:]
+    print(f"[LOG:{level}] [{source}] {message}", flush=True)
+
+
+# ─── Каталог изделий ──────────────────────────────────────────────────────────
+PRODUCTS_BASE_PATH = os.path.join(os.path.dirname(__file__), "Изделия")
+
+
+def _safe_products_path(*parts):
+    """Собирает путь внутри PRODUCTS_BASE_PATH, защита от path traversal."""
+    full = os.path.realpath(os.path.join(PRODUCTS_BASE_PATH, *parts))
+    base = os.path.realpath(PRODUCTS_BASE_PATH)
+    if not full.startswith(base + os.sep) and full != base:
+        return None
+    return full
 
 
 def load_equipment_text():
@@ -362,7 +396,7 @@ def analyze_drawing_with_claude_code(chertezh_file):
             ],
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=300,
             env=env,
         )
 
@@ -482,6 +516,8 @@ STUB_OPERATIONS = [
 
 def analyze_with_claude_code(chertezh_file, marshrutnaya_file=None, batch_size=1, tipovoy_file=None):
     """Обрабатывает PDF через Claude Code CLI (claude -p)."""
+    fname = getattr(chertezh_file, 'filename', 'чертёж') or 'чертёж'
+    alog(fname, f"Начало анализа (Claude Code CLI): {fname}")
     tmp1 = tmp2 = tmp3 = None
     try:
         # Сохраняем загруженные файлы во временные PDF
@@ -497,8 +533,10 @@ def analyze_with_claude_code(chertezh_file, marshrutnaya_file=None, batch_size=1
                 tipovoy_file.save(f3.name)
                 tmp3 = f3.name
 
+        alog(fname, "Загрузка базы оборудования завода...")
         equipment_text = load_equipment_text()
         equipment_section = f"\n{equipment_text}\n" if equipment_text else ""
+        alog(fname, f"База оборудования: {len(equipment_text)} символов" if equipment_text else "База оборудования пуста")
 
         if tmp2:
             # РЕЖИМ А: чертёж + маршрутная карта
@@ -543,6 +581,7 @@ def analyze_with_claude_code(chertezh_file, marshrutnaya_file=None, batch_size=1
             f"Верни ТОЛЬКО JSON массив, без пояснений."
         )
 
+        alog(fname, "Отправка запроса в Claude Code CLI...")
         env = os.environ.copy()
         env.pop("CLAUDECODE", None)  # разрешаем вложенный запуск
 
@@ -558,16 +597,19 @@ def analyze_with_claude_code(chertezh_file, marshrutnaya_file=None, batch_size=1
             ],
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=300,
             env=env,
         )
 
         if result.returncode != 0:
+            alog(fname, f"Ошибка Claude Code CLI (код {result.returncode}): {result.stderr[:200]}", "error")
             raise RuntimeError(f"Claude Code вернул ошибку: {result.stderr[:500]}")
 
+        alog(fname, "Ответ получен, разбор JSON...")
         # Формат --output-format json: {"result": "...", "is_error": false, ...}
         data = json.loads(result.stdout)
         if data.get("is_error"):
+            alog(fname, f"Claude Code вернул ошибку: {data.get('result', '?')[:200]}", "error")
             raise RuntimeError(f"Claude Code: {data.get('result', 'неизвестная ошибка')}")
 
         response_text = data["result"].strip()
@@ -583,8 +625,11 @@ def analyze_with_claude_code(chertezh_file, marshrutnaya_file=None, batch_size=1
         else:
             маршрут = {}
             операции = parsed
+        alog(fname, f"Результат: {len(операции)} операций")
         for op in операции:
+            alog(fname, f"  {op.get('операция','?')} → t_шт={op.get('t_шт_предложено','?')}, оборуд={op.get('оборудование','?')}")
             print(f"[DEBUG claude-code] {op.get('операция','?')[:30]} -> режимы={repr(op.get('режимы','ОТСУТСТВУЕТ'))}", flush=True)
+        alog(fname, "Анализ завершён", "success")
         return {"маршрут": маршрут, "операции": операции}
 
     finally:
@@ -597,10 +642,14 @@ def analyze_with_claude_code(chertezh_file, marshrutnaya_file=None, batch_size=1
 
 
 def analyze_with_claude(chertezh, marshrutnaya=None, batch_size=1, tipovoy=None):
+    fname = getattr(chertezh, 'filename', 'чертёж') or 'чертёж'
+    alog(fname, f"Начало анализа (Anthropic API): {fname}")
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
+        alog(fname, "ANTHROPIC_API_KEY не задан!", "error")
         raise ValueError("ANTHROPIC_API_KEY не задан в .env")
 
+    alog(fname, "Кодирование PDF в base64...")
     chertezh_b64 = pdf_to_base64(chertezh)
     content = [
         {"type": "text", "text": "Файл 1 — чертёж детали:"},
@@ -623,8 +672,10 @@ def analyze_with_claude(chertezh, marshrutnaya=None, batch_size=1, tipovoy=None)
             "source": {"type": "base64", "media_type": "application/pdf", "data": tipovoy_b64},
         })
 
+    alog(fname, "Загрузка базы оборудования завода...")
     equipment_text = load_equipment_text()
     equipment_section = f"\n{equipment_text}\n\n" if equipment_text else ""
+    alog(fname, f"База оборудования: {len(equipment_text)} символов" if equipment_text else "База оборудования пуста")
 
     if marshrutnaya:
         mode_instruction = "Нормируй операции из маршрутной карты, используя чертёж для расчёта параметров."
@@ -654,6 +705,7 @@ def analyze_with_claude(chertezh, marshrutnaya=None, batch_size=1, tipovoy=None)
         f"Верни только JSON."
     )})
 
+    alog(fname, "Отправка запроса в Anthropic API (claude-sonnet-4)...")
     client = Anthropic(api_key=api_key)
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -662,11 +714,14 @@ def analyze_with_claude(chertezh, marshrutnaya=None, batch_size=1, tipovoy=None)
         messages=[{"role": "user", "content": content}],
     )
 
+    alog(fname, f"Ответ получен: {message.usage.input_tokens} вх. токенов, {message.usage.output_tokens} вых. токенов")
+
     response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         lines = response_text.split("\n")
         response_text = "\n".join(lines[1:-1])
 
+    alog(fname, "Разбор JSON ответа...")
     parsed = json.loads(response_text)
     if isinstance(parsed, dict) and "операции" in parsed:
         маршрут = parsed.get("маршрут", {})
@@ -674,8 +729,11 @@ def analyze_with_claude(chertezh, marshrutnaya=None, batch_size=1, tipovoy=None)
     else:
         маршрут = {}
         result_data = parsed
+    alog(fname, f"Результат: {len(result_data)} операций")
     for op in result_data:
+        alog(fname, f"  {op.get('операция','?')} → t_шт={op.get('t_шт_предложено','?')}, оборуд={op.get('оборудование','?')}")
         print(f"[DEBUG api] {op.get('операция','?')[:30]} -> режимы={repr(op.get('режимы','ОТСУТСТВУЕТ'))}", flush=True)
+    alog(fname, "Анализ завершён", "success")
     return {"маршрут": маршрут, "операции": result_data}
 
 
@@ -704,6 +762,7 @@ def analyze():
 
     try:
         if use_stub:
+            alog(chertezh.filename, "Режим STUB — возвращаем тестовые данные", "warn")
             result = {"маршрут": {}, "операции": STUB_OPERATIONS}
         elif use_claude_code:
             result = analyze_with_claude_code(chertezh, marshrutnaya, batch_size, tipovoy)
@@ -807,6 +866,24 @@ def confirm():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/logs", methods=["GET"])
+def get_logs():
+    """Возвращает лог анализа. ?since=N — только записи начиная с индекса N."""
+    since = request.args.get("since", 0, type=int)
+    with _analysis_logs_lock:
+        entries = _analysis_logs[since:]
+        total = len(_analysis_logs)
+    return jsonify({"logs": entries, "total": total})
+
+
+@app.route("/api/logs/clear", methods=["POST"])
+def clear_logs():
+    """Очищает лог."""
+    with _analysis_logs_lock:
+        _analysis_logs.clear()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/history", methods=["GET"])
 def history():
     db = get_db()
@@ -816,6 +893,694 @@ def history():
     return jsonify([dict(r) for r in rows])
 
 
+# ─── Анализ PDF с диска (для каталога изделий) ─────────────────────────────────
+
+PRODUCTS_CACHE_FILE = "_norming_results.json"
+
+
+def _load_products_cache(variant_path):
+    """Загружает кеш результатов анализа из папки варианта."""
+    cache_path = os.path.join(variant_path, PRODUCTS_CACHE_FILE)
+    if os.path.isfile(cache_path):
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+
+def _save_products_cache(variant_path, cache):
+    """Сохраняет кеш результатов анализа в папку варианта."""
+    cache_path = os.path.join(variant_path, PRODUCTS_CACHE_FILE)
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+
+def analyze_pdf_from_disk(pdf_path, batch_size=1):
+    """Анализирует PDF-файл с диска — та же логика, что analyze_with_claude, но файл уже на диске."""
+    fname = os.path.basename(pdf_path)
+    use_stub = os.getenv("USE_STUB", "false").lower() == "true"
+    use_claude_code = os.getenv("USE_CLAUDE_CODE", "false").lower() == "true"
+
+    alog(fname, f"Начало анализа файла: {fname}")
+    alog(fname, f"Размер файла: {os.path.getsize(pdf_path)} байт")
+
+    if use_stub:
+        alog(fname, "Режим STUB — возвращаем тестовые данные", "warn")
+        return {"маршрут": {}, "операции": STUB_OPERATIONS}
+
+    method = "Claude Code CLI" if use_claude_code else "Anthropic REST API"
+    alog(fname, f"Метод анализа: {method}")
+
+    if use_claude_code:
+        return _analyze_disk_claude_code(pdf_path, batch_size)
+    else:
+        return _analyze_disk_claude_api(pdf_path, batch_size)
+
+
+def _run_claude_cli(prompt, system_prompt=None, allowed_tools=None, timeout=120):
+    """Вспомогательная функция запуска Claude Code CLI."""
+    env = os.environ.copy()
+    env.pop("CLAUDECODE", None)
+    cmd = [CLAUDE_BIN, "-p", prompt, "--output-format", "json", "--model", "sonnet", "--no-session-persistence"]
+    if system_prompt:
+        cmd += ["--system-prompt", system_prompt]
+    if allowed_tools:
+        cmd += ["--allowedTools", allowed_tools]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {result.stderr[:300]}")
+    # Парсим stdout — может быть JSON от CLI или прямой текст
+    stdout = result.stdout.strip()
+    if not stdout:
+        raise RuntimeError("Claude Code вернул пустой ответ")
+    try:
+        data = json.loads(stdout)
+        if data.get("is_error"):
+            raise RuntimeError(f"Claude Code: {data.get('result', 'ошибка')[:300]}")
+        text = data.get("result", "").strip()
+    except json.JSONDecodeError:
+        text = stdout  # fallback — ответ не в JSON-обёртке
+    if text.startswith("```"):
+        lines = text.split("\n")
+        text = "\n".join(lines[1:-1])
+    return text
+
+
+def _load_equipment_by_ops():
+    """Загружает оборудование как словарь {тип_операции: текст}."""
+    if not _OPENPYXL_AVAILABLE or not os.path.exists(EQUIPMENT_DB_PATH):
+        return {}
+    wb = openpyxl.load_workbook(EQUIPMENT_DB_PATH, read_only=True, data_only=True)
+    ws = wb['Лист1']
+    by_op = {}
+    for row in ws.iter_rows(min_row=3, values_only=True):
+        if not row[1]:
+            continue
+        name = str(row[1]).replace('\xa0', ' ').strip()
+        цех = str(row[2]).strip() if row[2] else '—'
+        ops = [str(x).strip() for x in [row[4], row[5], row[6]] if x]
+        for op in ops:
+            by_op.setdefault(op, []).append(f"  • {name[:80]} [{цех}]")
+    wb.close()
+    return by_op
+
+
+def _filter_equipment(operation_names, eq_by_ops):
+    """Фильтрует оборудование только по нужным операциям."""
+    lines = ["ОБОРУДОВАНИЕ ЗАВОДА (только для указанных операций):"]
+    matched = set()
+    for op_need in operation_names:
+        op_lower = op_need.lower().strip()
+        for op_key, items in eq_by_ops.items():
+            if op_lower in op_key.lower() or op_key.lower() in op_lower:
+                if op_key not in matched:
+                    matched.add(op_key)
+                    lines.append(f"\n{op_key}:")
+                    seen = set()
+                    for item in items:
+                        if item not in seen:
+                            seen.add(item)
+                            lines.append(item)
+    if len(matched) == 0:
+        return load_equipment_text()  # fallback — вся база
+    return "\n".join(lines)
+
+
+def _extract_json_value(text, opener='['):
+    """Находит первый корректный JSON-массив или объект с учётом вложенных скобок."""
+    closer = ']' if opener == '[' else '}'
+    start = text.find(opener)
+    if start == -1:
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i, ch in enumerate(text[start:], start):
+        if escape:
+            escape = False
+            continue
+        if ch == '\\' and in_str:
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch == opener:
+            depth += 1
+        elif ch == closer:
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
+
+
+def _extract_json_array(text):
+    return _extract_json_value(text, '[')
+
+
+def _is_assembly_drawing(filename):
+    """Проверяет, является ли файл сборочным чертежом (СБ)."""
+    import re as _re
+    name = os.path.basename(filename)
+    return bool(_re.search(r'\bСБ\b', name, _re.IGNORECASE) or _re.search(r'сборочн', name, _re.IGNORECASE))
+
+
+def _analyze_disk_claude_code(pdf_path, batch_size=1):
+    """Двухшаговый анализ PDF через Claude Code CLI."""
+    fname = os.path.basename(pdf_path)
+    is_assembly = _is_assembly_drawing(fname)
+
+    # ═══ ШАГ 1: Быстрый запрос — определить деталь и операции ═══
+    alog(fname, "Шаг 1: определение детали и списка операций...")
+    if is_assembly:
+        alog(fname, "Сборочный чертёж (СБ) — запрашиваем только операции уровня сборки")
+        step1_prompt = (
+            f"Прочитай PDF файл: {pdf_path}\n\n"
+            f"Это СБОРОЧНЫЙ чертёж (СБ). Определи:\n"
+            f"1. Название изделия/сборочной единицы\n"
+            f"2. Материал или основной конструкционный материал (если указан)\n"
+            f"3. Список операций СБОРОЧНОГО уровня — то есть операции, выполняемые при сборке готового изделия:\n"
+            f"   сварка, слесарная сборка, зачистка сварных швов, покрасочная, контроль, испытания.\n"
+            f"   НЕ включай операции изготовления отдельных деталей (резка, токарная, фрезерная, сверлильная и т.п.) — "
+            f"они относятся к деталям, а не к сборке.\n\n"
+            f"Верни ТОЛЬКО JSON:\n"
+            f'{{"деталь": "название изделия", "материал": "марка", "операции": ["Сварочная", "Слесарная", "Зачистка", "Покрасочная", "Контроль"]}}'
+        )
+    else:
+        step1_prompt = (
+            f"Прочитай PDF файл: {pdf_path}\n\n"
+            f"Определи:\n"
+            f"1. Название детали\n"
+            f"2. Материал\n"
+            f"3. Список необходимых операций обработки (по типу детали и чертежу)\n\n"
+            f"Верни ТОЛЬКО JSON:\n"
+            f'{{"деталь": "название", "материал": "марка", "операции": ["Газо-плазменная резка", "Зачистка", "Токарная", ...]}}'
+        )
+
+    try:
+        step1_text = _run_claude_cli(step1_prompt, allowed_tools="Read", timeout=90)
+        # Извлекаем первый JSON-объект из ответа с учётом вложенных скобок
+        json_obj = _extract_json_value(step1_text, '{')
+        if json_obj:
+            step1 = json.loads(json_obj)
+        else:
+            step1 = json.loads(step1_text)
+        op_list = step1.get("операции", [])
+        part_name = step1.get("деталь", fname)
+        material = step1.get("материал", "")
+        alog(fname, f"Шаг 1 готов: {part_name}, материал: {material}, операции: {op_list}")
+    except Exception as e:
+        alog(fname, f"Шаг 1 ошибка: {e}, fallback на полный промпт", "warn")
+        op_list = []
+        part_name = fname
+        material = ""
+
+    # ═══ ШАГ 2: Скрипт — фильтрация оборудования ═══
+    alog(fname, "Шаг 2: фильтрация оборудования...")
+    eq_by_ops = _load_equipment_by_ops()
+
+    if op_list:
+        filtered_eq = _filter_equipment(op_list, eq_by_ops)
+    else:
+        filtered_eq = load_equipment_text()  # fallback
+    alog(fname, f"Оборудование после фильтрации: {len(filtered_eq)} символов (было {len(load_equipment_text())})")
+
+    # ═══ ШАГ 3: Расчёт — компактный промпт (без каталога маршрутов — операции уже определены) ═══
+    alog(fname, "Шаг 3: расчёт норм времени...")
+    step3_prompt = (
+        f"Прочитай PDF файл: {pdf_path}\n\n"
+        f"Ты — нормировщик машиностроительного завода. Рассчитай нормы времени.\n"
+        f"Деталь: {part_name}, материал: {material}\n"
+        f"Операции: {', '.join(op_list) if op_list else 'определи из чертежа'}\n"
+        f"Партия: {batch_size} шт.\n\n"
+        f"{filtered_eq}\n\n"
+        f"Для каждой операции верни JSON объект с полями:\n"
+        f"деталь, операция (010 Название), оборудование (из списка выше [Цех]),\n"
+        f"t_шт_предложено (мин/дет), t_пз_предложено (мин/партию),\n"
+        f"режимы (сварка: I/U/Vсв/d, резка: V/S/t/n, ручные: —),\n"
+        f"обоснование.\n\n"
+        f"Верни ТОЛЬКО JSON массив, без пояснений."
+    )
+
+    alog(fname, f"Промпт шага 3: {len(step3_prompt)} символов")
+    step3_text = _run_claude_cli(step3_prompt, allowed_tools="Read", timeout=300)
+    alog(fname, f"Шаг 3 ответ получен ({len(step3_text)} символов)")
+
+    # Надёжный парсинг — ищем первый корректный JSON массив (с учётом вложенности)
+    json_arr = _extract_json_array(step3_text)
+    if json_arr:
+        parsed = json.loads(json_arr)
+    else:
+        parsed = json.loads(step3_text)
+    if isinstance(parsed, dict) and "операции" in parsed:
+        ops = parsed["операции"]
+        route = parsed.get("маршрут", {})
+    else:
+        ops = parsed
+        route = {}
+
+    alog(fname, f"Результат: {len(ops)} операций")
+    for op in ops:
+        alog(fname, f"  {op.get('операция','?')} → t_шт={op.get('t_шт_предложено','?')}, оборуд={op.get('оборудование','?')}")
+    alog(fname, "Анализ завершён", "success")
+    return {"маршрут": route, "операции": ops}
+
+
+def _analyze_disk_claude_api(pdf_path, batch_size=1):
+    """Анализ PDF с диска через Anthropic REST API."""
+    fname = os.path.basename(pdf_path)
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        alog(fname, "ANTHROPIC_API_KEY не задан!", "error")
+        raise ValueError("ANTHROPIC_API_KEY не задан в .env")
+
+    alog(fname, "Чтение PDF и кодирование в base64...")
+    with open(pdf_path, "rb") as f:
+        pdf_b64 = base64.standard_b64encode(f.read()).decode("utf-8")
+    alog(fname, f"PDF закодирован: {len(pdf_b64)} символов base64")
+
+    alog(fname, "Загрузка базы оборудования завода...")
+    equipment_text = load_equipment_text()
+    equipment_section = f"\n{equipment_text}\n\n" if equipment_text else ""
+    alog(fname, f"База оборудования: {len(equipment_text)} символов" if equipment_text else "База оборудования пуста")
+
+    alog(fname, "Загрузка каталога типовых маршрутов...")
+    typical_routes = load_typical_routes()
+    typical_section = f"\n{typical_routes}\n\n" if typical_routes else ""
+    alog(fname, f"Каталог маршрутов: {len(typical_routes)} символов" if typical_routes else "Каталог маршрутов пуст")
+
+    mode_instruction = (
+        "РЕЖИМ Б: Маршрутная карта НЕ предоставлена.\n"
+        "1. Проанализируй чертёж/документ: тип детали, материал, геометрия, точность.\n"
+        "2. Выбери НАИБОЛЕЕ ПОДХОДЯЩИЙ типовой маршрут из каталога ниже.\n"
+        "3. В поле 'обоснование' первой операции укажи: «Выбран маршрут M-XXXX: [операции]».\n"
+        "4. Пронормируй каждую операцию выбранного маршрута.\n"
+        "Нумеруй операции: 010, 020, 030..."
+    )
+
+    content = [
+        {"type": "text", "text": "Документ (чертёж или маршрутная карта):"},
+        {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_b64}},
+        {"type": "text", "text": (
+            f"{mode_instruction}\n\n"
+            f"Размер партии: {batch_size} деталей.\n"
+            f"{equipment_section}"
+            f"{typical_section}"
+            f"Рассчитай нормы времени для всех операций.\n\n"
+            f"ОБЯЗАТЕЛЬНО: в поле 'режимы' каждого объекта JSON укажи конкретные параметры оборудования.\n"
+            f"Для сварочных операций (прихватка, сварка, наплавка): I=...А, U=...В, Vсв=...м/ч, d=...мм\n"
+            f"Для металлорежущих станков: V=...м/мин, S=...мм/об, t=...мм, n=...об/мин\n"
+            f"Для ручных операций (комплектовочная, контрольная): режимы='—'\n\n"
+            f"Верни только JSON."
+        )},
+    ]
+
+    alog(fname, "Отправка запроса в Anthropic API (claude-sonnet-4)...")
+    client = Anthropic(api_key=api_key)
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4096,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": content}],
+    )
+    alog(fname, f"Ответ получен: {message.usage.input_tokens} вх. токенов, {message.usage.output_tokens} вых. токенов")
+
+    response_text = message.content[0].text.strip()
+    if response_text.startswith("```"):
+        lines = response_text.split("\n")
+        response_text = "\n".join(lines[1:-1])
+
+    alog(fname, "Разбор JSON ответа...")
+    parsed = json.loads(response_text)
+    if isinstance(parsed, dict) and "операции" in parsed:
+        ops = parsed["операции"]
+        route = parsed.get("маршрут", {})
+    else:
+        ops = parsed
+        route = {}
+
+    alog(fname, f"Результат: {len(ops)} операций")
+    for op in ops:
+        alog(fname, f"  {op.get('операция','?')} → t_шт={op.get('t_шт_предложено','?')}, оборуд={op.get('оборудование','?')}")
+    alog(fname, "Анализ завершён", "success")
+    return {"маршрут": route, "операции": ops}
+
+
+# ─── API каталога изделий ──────────────────────────────────────────────────────
+
+@app.route("/api/products/tree", methods=["GET"])
+def products_tree():
+    """Дерево типов изделий и вариантов для сайдбара."""
+    base = os.path.realpath(PRODUCTS_BASE_PATH)
+    if not os.path.isdir(base):
+        return jsonify({"types": []})
+
+    types = []
+    for type_name in sorted(os.listdir(base)):
+        type_path = os.path.join(base, type_name)
+        if type_name.startswith(".") or not os.path.isdir(type_path):
+            continue
+        variants = []
+        for var_name in sorted(os.listdir(type_path)):
+            var_path = os.path.join(type_path, var_name)
+            if var_name.startswith(".") or not os.path.isdir(var_path):
+                continue
+            has_pdf = any(
+                f.lower().endswith(".pdf")
+                for dirpath, _, files in os.walk(var_path)
+                for f in files
+            )
+            variants.append({"name": var_name, "empty": not has_pdf})
+        types.append({"name": type_name, "variants": variants})
+    return jsonify({"types": types})
+
+
+@app.route("/api/products/files", methods=["GET"])
+def products_files():
+    """Список файлов конкретного варианта изделия."""
+    ptype = request.args.get("type", "")
+    variant = request.args.get("variant", "")
+    if not ptype or not variant:
+        return jsonify({"error": "Параметры type и variant обязательны"}), 400
+
+    var_path = _safe_products_path(ptype, variant)
+    if not var_path or not os.path.isdir(var_path):
+        return jsonify({"error": "Вариант не найден"}), 404
+
+    def scan_dir(dirpath, rel_prefix=""):
+        entries = []
+        items = sorted(os.listdir(dirpath))
+        dirs = [i for i in items if not i.startswith(".") and os.path.isdir(os.path.join(dirpath, i))]
+        files = [i for i in items if not i.startswith(".") and i.lower().endswith(".pdf") and os.path.isfile(os.path.join(dirpath, i))]
+        for d in dirs:
+            children = scan_dir(os.path.join(dirpath, d), rel_prefix + d + "/")
+            if children:
+                entries.append({"path": rel_prefix + d, "name": d, "type": "dir", "children": children})
+        for f in files:
+            entries.append({"path": rel_prefix + f, "name": f, "type": "file"})
+        return entries
+
+    tree = scan_dir(var_path)
+    return jsonify({"variant": variant, "tree": tree})
+
+
+@app.route("/api/products/pdf", methods=["GET"])
+def products_pdf():
+    """Отдаёт PDF-файл изделия."""
+    ptype = request.args.get("type", "")
+    variant = request.args.get("variant", "")
+    fpath = request.args.get("path", "")
+    if not ptype or not variant or not fpath:
+        return jsonify({"error": "Параметры type, variant и path обязательны"}), 400
+
+    if not fpath.lower().endswith(".pdf"):
+        return jsonify({"error": "Допустимы только PDF-файлы"}), 400
+
+    full = _safe_products_path(ptype, variant, fpath)
+    if not full or not os.path.isfile(full):
+        return jsonify({"error": "Файл не найден"}), 404
+
+    return send_file(full, mimetype="application/pdf")
+
+
+@app.route("/api/products/results", methods=["GET"])
+def products_results():
+    """Возвращает кешированные результаты анализа для варианта изделия."""
+    ptype = request.args.get("type", "")
+    variant = request.args.get("variant", "")
+    if not ptype or not variant:
+        return jsonify({"error": "Параметры type и variant обязательны"}), 400
+
+    var_path = _safe_products_path(ptype, variant)
+    if not var_path or not os.path.isdir(var_path):
+        return jsonify({"error": "Вариант не найден"}), 404
+
+    cache = _load_products_cache(var_path)
+    return jsonify({"results": cache})
+
+
+def analyze_drawing_from_disk(pdf_path):
+    """Анализ чертежа с диска — замечания и оптимизации (как в основном «Анализ чертежа»)."""
+    use_stub = os.getenv("USE_STUB", "false").lower() == "true"
+    use_claude_code = os.getenv("USE_CLAUDE_CODE", "false").lower() == "true"
+
+    if use_stub:
+        return {
+            "summary": "Тестовый анализ чертежа.",
+            "remarks": [
+                {"id": 1, "type": "замечание", "category": "допуски", "priority": "средний",
+                 "title": "Тестовое замечание", "description": "Описание.", "suggestion": "Рекомендация.",
+                 "x": 50, "y": 50, "w": 10, "h": 10}
+            ]
+        }
+
+    if use_claude_code:
+        prompt = (
+            f"Прочитай PDF-файл чертежа детали: {pdf_path}\n\n"
+            f"Проведи детальный технический анализ:\n"
+            f"1. Найди замечания (ошибки, нарушения ГОСТ, отсутствующие данные)\n"
+            f"2. Найди оптимизации (предложения по улучшению технологичности)\n"
+            f"Для каждого пункта укажи приблизительные координаты на листе (x,y,w,h в процентах 0-100).\n"
+            f"Верни ТОЛЬКО JSON-объект по формату из системного промпта."
+        )
+        env = os.environ.copy()
+        env.pop("CLAUDECODE", None)
+        result = subprocess.run(
+            [CLAUDE_BIN, "-p", prompt, "--allowedTools", "Read", "--output-format", "json",
+             "--system-prompt", DRAWING_SYSTEM_PROMPT, "--model", "sonnet", "--no-session-persistence"],
+            capture_output=True, text=True, timeout=300, env=env,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Claude Code ошибка: {result.stderr[:500]}")
+        data = json.loads(result.stdout)
+        if data.get("is_error"):
+            raise RuntimeError(data.get("result", "ошибка"))
+        response_text = data["result"].strip()
+    else:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY не задан")
+        with open(pdf_path, "rb") as f:
+            pdf_b64 = base64.standard_b64encode(f.read()).decode("utf-8")
+        content = [
+            {"type": "text", "text": "Проведи детальный технический анализ этого чертежа детали:"},
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_b64}},
+            {"type": "text", "text": "Выяви замечания и оптимизации. Верни строго JSON-объект по формату."},
+        ]
+        client = Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514", max_tokens=4096,
+            system=DRAWING_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": content}],
+        )
+        response_text = message.content[0].text.strip()
+
+    if response_text.startswith("```"):
+        lines = response_text.split("\n")
+        response_text = "\n".join(lines[1:-1])
+    return json.loads(response_text)
+
+
+@app.route("/api/products/analyze_drawing", methods=["POST"])
+def products_analyze_drawing():
+    """Анализ чертежа детали из папки изделия."""
+    data = request.get_json()
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    filename = data.get("filename", "")
+
+    if not ptype or not variant or not filename:
+        return jsonify({"error": "Параметры обязательны"}), 400
+
+    pdf_full = _safe_products_path(ptype, variant, filename)
+    if not pdf_full or not os.path.isfile(pdf_full):
+        return jsonify({"error": "Файл не найден"}), 404
+
+    try:
+        result = analyze_drawing_from_disk(pdf_full)
+        # Кешируем
+        var_path = _safe_products_path(ptype, variant)
+        cache = _load_products_cache(var_path)
+        if filename not in cache:
+            cache[filename] = {}
+        cache[filename]["drawing_analysis"] = result
+        _save_products_cache(var_path, cache)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+BOM_PROMPT = """Проанализируй сборочный чертёж и извлеки спецификацию (ведомость деталей).
+
+Верни ТОЛЬКО JSON объект в формате:
+{
+  "bom": [
+    {"деталь": "название детали", "количество": 4},
+    {"деталь": "другая деталь", "количество": 2}
+  ]
+}
+
+Извлеки ВСЕ детали из спецификации/штампа чертежа с их количеством.
+Названия деталей пиши так, как они указаны в чертеже.
+Верни ТОЛЬКО JSON, без пояснений."""
+
+
+def extract_bom_from_assembly(pdf_path):
+    """Извлекает спецификацию (BOM) из сборочного чертежа."""
+    fname = os.path.basename(pdf_path)
+    use_stub = os.getenv("USE_STUB", "false").lower() == "true"
+    use_claude_code = os.getenv("USE_CLAUDE_CODE", "false").lower() == "true"
+
+    if use_stub:
+        return []
+
+    if use_claude_code:
+        env = os.environ.copy()
+        env.pop("CLAUDECODE", None)
+        prompt = f"Прочитай PDF файл:\n1. Сборочный чертёж: {pdf_path}\n\n{BOM_PROMPT}"
+        result = subprocess.run(
+            [CLAUDE_BIN, "-p", prompt, "--allowedTools", "Read",
+             "--output-format", "json", "--model", "sonnet", "--no-session-persistence"],
+            capture_output=True, text=True, timeout=300, env=env,
+        )
+        if result.returncode != 0:
+            return []
+        data = json.loads(result.stdout)
+        response_text = data.get("result", "").strip()
+    else:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            return []
+        with open(pdf_path, "rb") as f:
+            pdf_b64 = base64.standard_b64encode(f.read()).decode("utf-8")
+        client = Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": "Сборочный чертёж:"},
+                {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_b64}},
+                {"type": "text", "text": BOM_PROMPT},
+            ]}],
+        )
+        response_text = message.content[0].text.strip()
+
+    if response_text.startswith("```"):
+        lines = response_text.split("\n")
+        response_text = "\n".join(lines[1:-1])
+
+    parsed = json.loads(response_text)
+    return parsed.get("bom", [])
+
+
+@app.route("/api/products/extract_bom", methods=["POST"])
+def products_extract_bom():
+    """Извлекает спецификацию из сборочного чертежа и сохраняет количества в кеш."""
+    data = request.get_json()
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    assembly_file = data.get("assembly_file", "")
+
+    if not ptype or not variant or not assembly_file:
+        return jsonify({"error": "Параметры type, variant и assembly_file обязательны"}), 400
+
+    pdf_full = _safe_products_path(ptype, variant, assembly_file)
+    if not pdf_full or not os.path.isfile(pdf_full):
+        return jsonify({"error": "Сборочный чертёж не найден"}), 404
+
+    try:
+        print(f"[BOM] Извлечение спецификации из {assembly_file}", flush=True)
+        bom = extract_bom_from_assembly(pdf_full)
+        print(f"[BOM] Найдено {len(bom)} позиций", flush=True)
+
+        # Сохраняем количества в кеш
+        var_path = _safe_products_path(ptype, variant)
+        cache = _load_products_cache(var_path)
+        cache["_bom"] = bom
+        _save_products_cache(var_path, cache)
+
+        return jsonify({"bom": bom})
+    except Exception as e:
+        print(f"[BOM] Ошибка: {e}", flush=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/products/save_qty", methods=["POST"])
+def products_save_qty():
+    """Сохраняет количество деталей в кеш."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    filename = data.get("filename", "")
+    qty = data.get("qty", 1)
+
+    var_path = _safe_products_path(ptype, variant)
+    if not var_path or not os.path.isdir(var_path):
+        return jsonify({"error": "Вариант не найден"}), 404
+
+    cache = _load_products_cache(var_path)
+    if filename in cache:
+        cache[filename]["qty"] = max(1, int(qty))
+    else:
+        cache[filename] = {"qty": max(1, int(qty))}
+    _save_products_cache(var_path, cache)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/products/analyze_part", methods=["POST"])
+def products_analyze_part():
+    """Анализирует один PDF из папки изделия и кеширует результат."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    filename = data.get("filename", "")
+    if not ptype or not variant or not filename:
+        return jsonify({"error": "Параметры type, variant и filename обязательны"}), 400
+
+    if not filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Допустимы только PDF-файлы"}), 400
+
+    var_path = _safe_products_path(ptype, variant)
+    if not var_path or not os.path.isdir(var_path):
+        return jsonify({"error": "Вариант не найден"}), 404
+
+    pdf_full = _safe_products_path(ptype, variant, filename)
+    if not pdf_full or not os.path.isfile(pdf_full):
+        return jsonify({"error": "Файл не найден"}), 404
+
+    try:
+        alog(filename, f"Запрос анализа: {variant} / {filename}")
+        result = analyze_pdf_from_disk(pdf_full, batch_size=1)
+        operations = result.get("операции", [])
+        route = result.get("маршрут", {})
+
+        # Кешируем результат
+        cache = _load_products_cache(var_path)
+        cache[filename] = {
+            "operations": operations,
+            "route": route,
+            "analyzed_at": datetime.now().isoformat()
+        }
+        _save_products_cache(var_path, cache)
+        alog(filename, f"Результат сохранён в кеш ({len(operations)} операций)", "success")
+
+        return jsonify({"filename": filename, "operations": operations, "route": route})
+
+    except Exception as e:
+        alog(filename, f"Ошибка: {str(e)}", "error")
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True, port=5050, use_reloader=False)
+    app.run(debug=True, port=5050, use_reloader=False, threaded=True)
