@@ -30,13 +30,16 @@ def _get_db():
 
 
 def file_hash(file_obj) -> str:
-    """Считает SHA-256 хэш от содержимого файла."""
+    """Считает SHA-256 хэш от содержимого файла (file-like или строка-путь)."""
     h = hashlib.sha256()
-    pos = file_obj.tell() if hasattr(file_obj, "tell") else 0
-    if hasattr(file_obj, "read"):
+    if isinstance(file_obj, str):
+        with open(file_obj, "rb") as f:
+            h.update(f.read())
+    elif hasattr(file_obj, "read"):
+        pos = file_obj.tell() if hasattr(file_obj, "tell") else 0
         data = file_obj.read()
         h.update(data)
-        file_obj.seek(pos)  # вернуть указатель
+        file_obj.seek(pos)
     return h.hexdigest()
 
 

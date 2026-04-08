@@ -216,6 +216,155 @@ def history():
     return jsonify([dict(r) for r in rows])
 
 
+# ─── Каталог изделий ──────────────────────────────────────────────────────────
+
+from flask import send_file
+from services.products_service import (
+    get_products_tree,
+    get_variant_files,
+    get_pdf_path,
+    get_cached_results,
+    analyze_part,
+    analyze_drawing_disk,
+    extract_bom,
+    save_qty,
+)
+
+
+@app.route("/api/products/tree", methods=["GET"])
+def products_tree():
+    """Дерево типов изделий и вариантов для сайдбара."""
+    return jsonify(get_products_tree())
+
+
+@app.route("/api/products/files", methods=["GET"])
+def products_files():
+    """Список файлов конкретного варианта изделия."""
+    ptype = request.args.get("type", "")
+    variant = request.args.get("variant", "")
+    if not ptype or not variant:
+        return jsonify({"error": "Параметры type и variant обязательны"}), 400
+
+    result = get_variant_files(ptype, variant)
+    if result is None:
+        return jsonify({"error": "Вариант не найден"}), 404
+    return jsonify(result)
+
+
+@app.route("/api/products/pdf", methods=["GET"])
+def products_pdf():
+    """Отдаёт PDF-файл изделия."""
+    ptype = request.args.get("type", "")
+    variant = request.args.get("variant", "")
+    fpath = request.args.get("path", "")
+    if not ptype or not variant or not fpath:
+        return jsonify({"error": "Параметры type, variant и path обязательны"}), 400
+
+    if not fpath.lower().endswith(".pdf"):
+        return jsonify({"error": "Допустимы только PDF-файлы"}), 400
+
+    full = get_pdf_path(ptype, variant, fpath)
+    if not full:
+        return jsonify({"error": "Файл не найден"}), 404
+
+    return send_file(full, mimetype="application/pdf")
+
+
+@app.route("/api/products/results", methods=["GET"])
+def products_results():
+    """Возвращает кэшированные результаты анализа для варианта изделия."""
+    ptype = request.args.get("type", "")
+    variant = request.args.get("variant", "")
+    if not ptype or not variant:
+        return jsonify({"error": "Параметры type и variant обязательны"}), 400
+
+    cache = get_cached_results(ptype, variant)
+    if cache is None:
+        return jsonify({"error": "Вариант не найден"}), 404
+    return jsonify({"results": cache})
+
+
+@app.route("/api/products/analyze_part", methods=["POST"])
+def products_analyze_part():
+    """Анализирует один PDF из папки изделия и кэширует результат."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    try:
+        result = analyze_part(
+            ptype=data.get("type", ""),
+            variant=data.get("variant", ""),
+            filename=data.get("filename", ""),
+        )
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/products/analyze_drawing", methods=["POST"])
+def products_analyze_drawing():
+    """Анализ чертежа детали из папки изделия."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    try:
+        result = analyze_drawing_disk(
+            ptype=data.get("type", ""),
+            variant=data.get("variant", ""),
+            filename=data.get("filename", ""),
+        )
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/products/extract_bom", methods=["POST"])
+def products_extract_bom():
+    """Извлекает спецификацию из сборочного чертежа."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    try:
+        bom = extract_bom(
+            ptype=data.get("type", ""),
+            variant=data.get("variant", ""),
+            assembly_file=data.get("assembly_file", ""),
+        )
+        return jsonify({"bom": bom})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/products/save_qty", methods=["POST"])
+def products_save_qty():
+    """Сохраняет количество деталей в кэш."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    try:
+        save_qty(
+            ptype=data.get("type", ""),
+            variant=data.get("variant", ""),
+            filename=data.get("filename", ""),
+            qty=data.get("qty", 1),
+        )
+        return jsonify({"ok": True})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ─── Запуск ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

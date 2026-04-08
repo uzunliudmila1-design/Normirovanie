@@ -17,6 +17,7 @@ DB_PATH = os.path.join(BASE_DIR, "norming.db")
 
 EQUIPMENT_XLSX = os.path.join(BASE_DIR, "data", "equipment.xlsx")
 TYPICAL_ROUTES_XLSX = os.path.join(BASE_DIR, "routes", "typical_routes.xlsx")
+PRODUCTS_BASE_PATH = os.path.join(BASE_DIR, "Изделия")
 
 # ─── Claude ────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
