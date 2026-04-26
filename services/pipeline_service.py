@@ -14,6 +14,8 @@ import os
 import time
 import sqlite3
 import threading
+import traceback
+import uuid
 from datetime import datetime
 
 from config import DB_PATH
@@ -41,7 +43,119 @@ _STAGE_NAMES = {
 }
 
 
+# ─── Фоновые задачи ──────────────────────────────────────────────────────────
+# Длинные операции (run_pipeline, analyze_drawing, extract_bom) запускаются в
+# отдельном потоке. HTTP-запрос сразу возвращает job_id, фронт опрашивает
+# /api/jobs/<id>. Это снимает таймауты прокси/туннеля (Cloudflare Quick Tunnel
+# рвёт запросы дольше ~100 сек) и убирает зависание UI.
+
+_jobs_lock = threading.Lock()
+_jobs: dict[str, dict] = {}
+_thread_state = threading.local()
+_MAX_KEEP_FINISHED = 50
+
+
+def _new_job(filename: str, kind: str) -> str:
+    job_id = uuid.uuid4().hex[:12]
+    with _jobs_lock:
+        _jobs[job_id] = {
+            "id": job_id,
+            "kind": kind,
+            "filename": filename,
+            "active": True,
+            "stage": 0,
+            "stage_name": "Запуск",
+            "started_at": time.time(),
+            "finished_at": None,
+            "result": None,
+            "error": None,
+        }
+        finished = [(jid, j.get("finished_at") or 0) for jid, j in _jobs.items() if not j["active"]]
+        if len(finished) > _MAX_KEEP_FINISHED:
+            finished.sort(key=lambda p: p[1])
+            for jid, _ in finished[: len(finished) - _MAX_KEEP_FINISHED]:
+                _jobs.pop(jid, None)
+    return job_id
+
+
+def get_job(job_id: str) -> dict | None:
+    """Возвращает состояние задачи или None, если такой нет."""
+    with _jobs_lock:
+        j = _jobs.get(job_id)
+        return dict(j) if j else None
+
+
+def _update_job(job_id: str, **fields) -> None:
+    with _jobs_lock:
+        j = _jobs.get(job_id)
+        if j:
+            j.update(fields)
+
+
+def _job_runner(job_id: str, target, args: tuple, kwargs: dict, cleanup_paths: list[str] | None) -> None:
+    _thread_state.job_id = job_id
+    try:
+        result = target(*args, **kwargs)
+        _update_job(
+            job_id,
+            active=False,
+            stage=0,
+            stage_name="Готово",
+            result=result,
+            finished_at=time.time(),
+        )
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb, flush=True)
+        _update_job(
+            job_id,
+            active=False,
+            stage=0,
+            stage_name="Ошибка",
+            error=f"{e}\n\nTraceback:\n{tb}",
+            finished_at=time.time(),
+        )
+    finally:
+        _thread_state.job_id = None
+        with _status_lock:
+            _current_status.update({"active": False, "stage": 0, "stage_name": "", "filename": ""})
+        for p in cleanup_paths or []:
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+
+
+def start_job(
+    target,
+    *,
+    args: tuple = (),
+    kwargs: dict | None = None,
+    filename: str = "",
+    kind: str = "pipeline",
+    cleanup_paths: list[str] | None = None,
+) -> str:
+    """Запускает target в фоновом потоке, возвращает job_id для опроса."""
+    job_id = _new_job(filename, kind)
+    t = threading.Thread(
+        target=_job_runner,
+        args=(job_id, target, args, kwargs or {}, cleanup_paths),
+        daemon=True,
+    )
+    t.start()
+    return job_id
+
+
 def _set_status(stage: int, filename: str = "") -> None:
+    job_id = getattr(_thread_state, "job_id", None)
+    if job_id:
+        with _jobs_lock:
+            j = _jobs.get(job_id)
+            if j is not None:
+                j["stage"] = stage
+                j["stage_name"] = _STAGE_NAMES.get(stage, j.get("stage_name", ""))
+                if filename:
+                    j["filename"] = filename
     with _status_lock:
         _current_status.update({
             "active": stage > 0,
@@ -123,7 +237,7 @@ def run_pipeline(
         if route.operations:
             numbered_ops = []
             for i, op in enumerate(route.operations):
-                num = f"{(i + 1) * 10:03d}"
+                num = f"{10 + i * 5:03d}"
                 # Если операция уже содержит номер — не дублируем
                 if op[:3].isdigit():
                     numbered_ops.append(op)
@@ -273,7 +387,7 @@ def _fix_cleaning_after_welding(norms):
     if moved:
         # Перенумеровываем операции
         for j, n in enumerate(result):
-            num = f"{(j + 1) * 10:03d}"
+            num = f"{10 + j * 5:03d}"
             parts = n.operation.strip().split(None, 1)
             if len(parts) == 2 and parts[0].isdigit():
                 n.operation = f"{num} {parts[1]}"
@@ -333,7 +447,7 @@ def _fix_no_drilling_with_plasma(norms, facts):
         method = "плазмой/лазером"
         print(f"[ПРАВИЛО 1] Удалено {removed} операций (Сверлильная/Фрезерная) — отверстия режутся {method}", flush=True)
         for j, n in enumerate(filtered):
-            num = f"{(j + 1) * 10:03d}"
+            num = f"{10 + j * 5:03d}"
             parts = n.operation.strip().split(None, 1)
             if len(parts) == 2 and parts[0].isdigit():
                 n.operation = f"{num} {parts[1]}"
@@ -341,10 +455,14 @@ def _fix_no_drilling_with_plasma(norms, facts):
 
 
 def _fix_no_richtirovka_thin_metal(norms, facts):
-    """Правило 4: рихтовка запрещена если толщина детали < 10 мм."""
-    thickness = facts.height_mm or facts.width_mm  # высота/толщина листа
-    if thickness is None or thickness >= 10:
-        return norms
+    """Правило 4 (СТП 005-01): рихтовка применима только при 4 ≤ толщина ≤ 40 И длина ≥ 300."""
+    thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
+    length = facts.length_mm
+
+    thickness_ok = thickness is not None and 4 <= thickness <= 40
+    length_ok = length is None or length >= 300
+    if thickness_ok and length_ok:
+        return norms  # рихтовка допустима
 
     def _is_richtirovka(op: str) -> bool:
         return "рихтов" in op.lower() or "правк" in op.lower()
@@ -356,9 +474,15 @@ def _fix_no_richtirovka_thin_metal(norms, facts):
     filtered = [n for n in norms if not _is_richtirovka(_op_name(n))]
     removed = len(norms) - len(filtered)
     if removed:
-        print(f"[ПРАВИЛО 4] Удалено {removed} операций «Рихтовка» — толщина {thickness} мм < 10 мм", flush=True)
+        if thickness is not None and not (4 <= thickness <= 40):
+            cause = f"толщина {thickness} мм вне диапазона 4–40 мм"
+        elif length is not None and length < 300:
+            cause = f"длина {length} мм < 300 мм"
+        else:
+            cause = "не выполнены условия СТП 005-01 (4 ≤ T ≤ 40 мм И L ≥ 300 мм)"
+        print(f"[ПРАВИЛО 4] Удалено {removed} операций «Рихтовка» — {cause}", flush=True)
         for j, n in enumerate(filtered):
-            num = f"{(j + 1) * 10:03d}"
+            num = f"{10 + j * 5:03d}"
             parts = n.operation.strip().split(None, 1)
             if len(parts) == 2 and parts[0].isdigit():
                 n.operation = f"{num} {parts[1]}"

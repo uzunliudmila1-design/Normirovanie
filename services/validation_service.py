@@ -81,21 +81,55 @@ def validate_result(
                     f"отверстия вырезаются резкой, операция не нужна"
                 )
 
-    # 3б. Правило 2: метод резки должен соответствовать толщине металла (≤12мм → лазер, >12мм → плазма)
+    # 3б. Правило 2 (СТП 005-01): метод резки по толщине:
+    #     ≤12 → лазер; 12<T≤40 → плазма; 40<T≤200 → газовая. Зона 10–12 мм — допускается и лазер, и плазма.
     thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
     if thickness is not None and facts.has_cutting:
         for norm in norms:
             op = _op_bare(norm)
-            if "лазерн" in op and thickness > 12:
+            is_gas = "газовая" in op or "газо-кислород" in op or "газокислор" in op
+            is_plasma = ("плазм" in op) and not is_gas  # «газо-плазменная» матчится как плазменная
+            is_laser = "лазерн" in op
+            if is_laser and thickness > 12:
                 warnings.append(
                     f"ПРАВИЛО 2: {norm.operation} — лазерная резка применяется при толщине ≤ 12 мм, "
-                    f"а толщина детали {thickness} мм. Следует использовать газо-плазменную резку."
+                    f"а толщина детали {thickness} мм. При 12 < T ≤ 40 — плазменная, при T > 40 — газовая."
                 )
-            if ("плазм" in op) and thickness <= 12:
-                warnings.append(
-                    f"ПРАВИЛО 2: {norm.operation} — газо-плазменная резка применяется при толщине > 12 мм, "
-                    f"а толщина детали {thickness} мм. Следует использовать лазерную резку."
-                )
+            if is_plasma:
+                if thickness < 10:
+                    warnings.append(
+                        f"ПРАВИЛО 2: {norm.operation} — плазменная резка применяется при толщине > 12 мм "
+                        f"(допустимо от 10 мм), а толщина детали {thickness} мм. Следует использовать лазерную резку."
+                    )
+                elif thickness > 40:
+                    warnings.append(
+                        f"ПРАВИЛО 2: {norm.operation} — плазменная резка применяется при 12 < T ≤ 40 мм, "
+                        f"а толщина детали {thickness} мм. При T > 40 — газовая резка."
+                    )
+            if is_gas:
+                if thickness < 40:
+                    warnings.append(
+                        f"ПРАВИЛО 2: {norm.operation} — газовая резка применяется при толщине ≥ 40 мм, "
+                        f"а толщина детали {thickness} мм. При T ≤ 12 — лазер, при 12 < T ≤ 40 — плазма."
+                    )
+                elif thickness > 200:
+                    warnings.append(
+                        f"ПРАВИЛО 2: {norm.operation} — газовая резка применяется при толщине ≤ 200 мм, "
+                        f"а толщина детали {thickness} мм."
+                    )
+
+    # 3б+. Правило СТП 005-01: при толщине ≥ 10 мм после резки обязательна «Зачистка»
+    if thickness is not None and thickness >= 10 and facts.has_cutting:
+        has_cutting_op = any(
+            "лазерн" in _op_bare(n) or "плазм" in _op_bare(n)
+            or "газовая" in _op_bare(n) or "газо-кислород" in _op_bare(n)
+            for n in norms
+        )
+        has_zachistka = any("зачистк" in _op_bare(n) for n in norms)
+        if has_cutting_op and not has_zachistka:
+            warnings.append(
+                f"ПРАВИЛО 5: толщина {thickness} мм ≥ 10 мм — после резки обязательна операция «Зачистка» (СТП 005-01)"
+            )
 
     # 3в. Шаг 2: Прихватка без Сварки — ошибка маршрута
     has_prikhvatka = any("прихватк" in _op_bare(n) for n in norms)

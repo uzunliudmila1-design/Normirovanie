@@ -48,7 +48,7 @@ def select_equipment(
     auto_choices = []
 
     for op in operations:
-        # Убираем номер операции (010, 020...) для поиска
+        # Убираем номер операции (010, 015, 020...) для поиска
         op_name = _strip_op_number(op)
 
         if op_name in _NO_EQUIPMENT_OPS:

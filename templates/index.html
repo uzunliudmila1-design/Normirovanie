@@ -1136,6 +1136,48 @@
     document.getElementById('status-text').textContent = '';
   }
 
+  // --- Polling фоновых задач ---
+  // Бэкенд возвращает {job_id} на POST /api/.../analyze*, фронт опрашивает
+  // /api/jobs/<id> до active=false и забирает result или error.
+  async function pollJob(jobId, onProgress, intervalMs = 2000) {
+    while (true) {
+      let r;
+      try {
+        r = await fetch('/api/jobs/' + encodeURIComponent(jobId));
+      } catch (e) {
+        await new Promise(res => setTimeout(res, intervalMs));
+        continue;
+      }
+      if (!r.ok) {
+        if (r.status === 404) throw new Error('Задача не найдена (job_id=' + jobId + ')');
+        await new Promise(res => setTimeout(res, intervalMs));
+        continue;
+      }
+      let j;
+      try { j = await r.json(); }
+      catch { await new Promise(res => setTimeout(res, intervalMs)); continue; }
+      if (onProgress) { try { onProgress(j); } catch {} }
+      if (!j.active) {
+        if (j.error) throw new Error(j.error);
+        return j.result;
+      }
+      await new Promise(res => setTimeout(res, intervalMs));
+    }
+  }
+
+  async function startJob(url, options) {
+    const resp = await fetch(url, options);
+    if (!resp.ok && resp.status !== 202) {
+      let msg = 'HTTP ' + resp.status;
+      try { const e = await resp.json(); if (e.error) msg = e.error; } catch {}
+      throw new Error(msg);
+    }
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    if (!data.job_id) return { sync: data };
+    return { jobId: data.job_id };
+  }
+
   // --- Analyze ---
   async function analyze() {
     const chertezh = document.getElementById('chertezh-input').files[0];
@@ -1155,17 +1197,19 @@
 
     try {
       const t0 = performance.now();
-      const resp = await fetch('/api/analyze', { method: 'POST', body: form });
-      const data = await resp.json();
-      const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+      const started = await startJob('/api/analyze', { method: 'POST', body: form });
 
-      if (!resp.ok || data.error) {
-        addLog('Ошибка API: ' + (data.error || 'Неизвестная ошибка'), 'err');
-        setStatus('error', '⚠ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-        document.getElementById('btn-analyze').disabled = false;
-        updateSteps(1);
-        return;
+      let data;
+      if (started.sync) {
+        data = started.sync;
+      } else {
+        data = await pollJob(started.jobId, (j) => {
+          if (j.active && j.stage > 0) {
+            setStatus('info', '<span class="loader"></span>&nbsp;Этап ' + j.stage + '/6 — ' + (j.stage_name || ''));
+          }
+        });
       }
+      const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
       addLog('Ответ получен за ' + elapsed + ' сек, операций: ' + (data.operations || []).length, 'ok');
 
@@ -1833,17 +1877,11 @@
 
     try {
       const t0 = performance.now();
-      const resp = await fetch('/api/analyze_drawing', { method: 'POST', body: form });
-      const data = await resp.json();
+      const started = await startJob('/api/analyze_drawing', { method: 'POST', body: form });
+      const data = started.sync || await pollJob(started.jobId, (j) => {
+        if (j.active) statusEl.innerHTML = '<span class="loader"></span> Анализ чертежа... ' + (j.stage_name || '');
+      });
       const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
-
-      if (!resp.ok || data.error) {
-        addLog('Ошибка анализа чертежа: ' + (data.error || '?'), 'err');
-        statusEl.innerHTML = '⚠ Ошибка: ' + (data.error || 'Неизвестная ошибка');
-        statusEl.style.color = '#C07070';
-        btn.disabled = false;
-        return;
-      }
 
       drawingRemarks = data.remarks || [];
       remarkVisibility = {};
@@ -1987,7 +2025,6 @@
   let _productsFiles = [];       // [{path, name, type}]
   let _productsResults = {};     // filename -> {operations, analyzed_at}
   let _productsQty = {};         // filename -> количество (default 1)
-  let _analysisPollTimer = null; // таймер опроса статуса анализа
 
   async function loadProductsTree() {
     try {
@@ -2371,41 +2408,6 @@
     }
   }
 
-  function _stopAnalysisPoll() {
-    if (_analysisPollTimer) { clearInterval(_analysisPollTimer); _analysisPollTimer = null; }
-  }
-
-  function _startAnalysisPoll(getBtnEl, getBodyEl) {
-    _stopAnalysisPoll();
-    const stageNames = {
-      1: 'Извлечение фактов',
-      2: 'Выбор маршрута',
-      3: 'Выбор маршрута',
-      4: 'Подбор оборудования',
-      5: 'Расчёт норм',
-      6: 'Валидация',
-    };
-    const poll = async () => {
-      try {
-        const r = await fetch('/api/products/analysis_status');
-        const s = await r.json();
-        if (s.active) {
-          const btnEl = getBtnEl();
-          const bodyEl = getBodyEl();
-          const label = `Этап ${s.stage}/6 — ${stageNames[s.stage] || s.stage_name}`;
-          if (btnEl) btnEl.textContent = label;
-          if (bodyEl) {
-            const ind = bodyEl.querySelector('.stage-progress-indicator');
-            if (ind) ind.textContent = label;
-          }
-        }
-      } catch {}
-    };
-    // Первый опрос через 3 сек, затем каждые 5 сек
-    setTimeout(poll, 3000);
-    _analysisPollTimer = setInterval(poll, 5000);
-  }
-
   async function analyzePart(idx) {
     const file = _productsFiles[idx];
     if (!file) return;
@@ -2415,19 +2417,30 @@
     if (btn) { btn.classList.add('loading'); btn.textContent = 'Анализ...'; }
     if (body) {
       body.classList.add('open');
-      body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;"><span class="stage-progress-indicator">Анализ... (может занять до минуты)</span></div>';
+      body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;"><span class="stage-progress-indicator">Анализ... (запуск)</span></div>';
     }
 
     const section = document.getElementById('part-' + idx);
     if (section) section.querySelector('.chevron').classList.add('open');
 
-    _startAnalysisPoll(
-      () => document.getElementById('btn-part-' + idx),
-      () => document.getElementById('part-body-' + idx),
-    );
+    const stageNames = {
+      1: 'Извлечение фактов', 2: 'Выбор маршрута', 3: 'Выбор маршрута',
+      4: 'Подбор оборудования', 5: 'Расчёт норм', 6: 'Валидация',
+    };
+    const onProgress = (j) => {
+      if (!j.active || !j.stage) return;
+      const label = `Этап ${j.stage}/6 — ${stageNames[j.stage] || j.stage_name || ''}`;
+      const btnEl = document.getElementById('btn-part-' + idx);
+      const bodyEl = document.getElementById('part-body-' + idx);
+      if (btnEl) btnEl.textContent = label;
+      if (bodyEl) {
+        const ind = bodyEl.querySelector('.stage-progress-indicator');
+        if (ind) ind.textContent = label;
+      }
+    };
 
     try {
-      const resp = await fetch('/api/products/analyze_part', {
+      const started = await startJob('/api/products/analyze_part', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2436,13 +2449,7 @@
           filename: file.path
         })
       });
-      _stopAnalysisPoll();
-      const data = await resp.json();
-      if (data.error) {
-        body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка: ${esc(data.error)}</div>`;
-        if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
-        return;
-      }
+      const data = started.sync || await pollJob(started.jobId, onProgress);
 
       const routeInfo = data.route || null;
       _productsResults[file.name] = { operations: data.operations, route: routeInfo, analyzed_at: new Date().toISOString() };
@@ -2455,9 +2462,10 @@
       updateProductTotals();
 
     } catch (e) {
-      _stopAnalysisPoll();
-      body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка сети: ${esc(e.message)}</div>`;
-      if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
+      const bodyEl = document.getElementById('part-body-' + idx);
+      const btnEl = document.getElementById('btn-part-' + idx);
+      if (bodyEl) bodyEl.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка: ${esc(e.message)}</div>`;
+      if (btnEl) { btnEl.classList.remove('loading'); btnEl.textContent = 'Повторить'; }
     }
   }
 
@@ -2469,7 +2477,7 @@
     if (btn) { btn.classList.add('loading'); btn.textContent = 'Анализ...'; }
 
     try {
-      const resp = await fetch('/api/products/analyze_drawing', {
+      const started = await startJob('/api/products/analyze_drawing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2478,12 +2486,7 @@
           filename: file.path
         })
       });
-      const data = await resp.json();
-      if (data.error) {
-        if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
-        alert('Ошибка: ' + data.error);
-        return;
-      }
+      const data = started.sync || await pollJob(started.jobId);
 
       if (!_productsResults[file.name]) _productsResults[file.name] = {};
       _productsResults[file.name].drawing_analysis = data;
@@ -2498,7 +2501,9 @@
       newSection.querySelector('.chevron').classList.add('open');
 
     } catch (e) {
-      if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
+      const btnEl = document.getElementById('btn-drawing-' + idx);
+      if (btnEl) { btnEl.classList.remove('loading'); btnEl.textContent = 'Повторить'; }
+      alert('Ошибка: ' + e.message);
     }
   }
 
@@ -2578,13 +2583,13 @@
 
   async function extractBomFromAssembly(type, variant, assemblyPath) {
     try {
-      const resp = await fetch('/api/products/extract_bom', {
+      const started = await startJob('/api/products/extract_bom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, variant, assembly_file: assemblyPath })
       });
-      const data = await resp.json();
-      if (data.bom && data.bom.length) {
+      const data = started.sync || await pollJob(started.jobId);
+      if (data && data.bom && data.bom.length) {
         _productsResults['_bom'] = data.bom;
         applyBomToFiles(data.bom);
         renderPartsPanel();

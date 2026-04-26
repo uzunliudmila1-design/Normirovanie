@@ -201,7 +201,7 @@ def analyze_part(ptype: str, variant: str, filename: str) -> dict:
                 last_num = 0
                 if last_op and last_op[:3].isdigit():
                     last_num = int(last_op[:3])
-                next_num = f"{last_num + 10:03d}"
+                next_num = f"{last_num + 5:03d}"
                 kgp_op = {
                     "деталь": operations[0].get("деталь", "") if operations else "",
                     "операция": f"{next_num} Контрольная ГП",

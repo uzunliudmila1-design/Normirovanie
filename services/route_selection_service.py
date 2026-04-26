@@ -192,14 +192,21 @@ def _suggest_route_from_facts(facts: DrawingFacts) -> list[str]:
     if facts.is_assembly:
         ops.append("Комплектовочная")
 
-    # 2. Резка (бизнес-правило: толщина ≤ 12 мм → лазер, > 12 мм → плазма/газ)
+    # 2. Резка по толщине (СТП 005-01):
+    #    ≤12 → Лазерная; 12<T≤40 → Плазменная; 40<T≤200 → Газовая.
+    #    Зачистка обязательна при T ≥ 10 мм.
     if facts.has_cutting:
         thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
-        if thickness and thickness <= 12:
+        if thickness is None:
             ops.append("Лазерная резка")
+        elif thickness <= 12:
+            ops.append("Лазерная резка")
+        elif thickness <= 40:
+            ops.append("Плазменная резка")
         else:
-            ops.append("Газо-плазменная резка")
-            ops.append("Зачистка")  # после газо-плазменной резки всегда идёт зачистка
+            ops.append("Газовая резка")
+        if thickness is not None and thickness >= 10:
+            ops.append("Зачистка")
 
     # 3. Гибка / вальцовка
     if facts.has_bending:
@@ -234,10 +241,13 @@ def _suggest_route_from_facts(facts: DrawingFacts) -> list[str]:
     if facts.has_holes or facts.has_threading or facts.has_slots:
         ops.append("Слесарная")
 
-    # 10. Рихтовка (только при толщине ≥ 10 мм — бизнес-правило)
+    # 10. Рихтовка (СТП 005-01: 4 ≤ T ≤ 40 мм И L ≥ 300 мм)
     if facts.has_straightening:
         thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
-        if thickness is None or thickness >= 10:  # запрещена для деталей < 10 мм
+        length = facts.length_mm
+        thickness_ok = thickness is not None and 4 <= thickness <= 40
+        length_ok = length is None or length >= 300
+        if thickness_ok and length_ok:
             ops.append("Рихтовка")
 
     # 11. Покраска

@@ -1,14 +1,29 @@
 import json
+import os
 import sqlite3
 import traceback
+import uuid
 from datetime import datetime
 
 from flask import Flask, request, jsonify, render_template, g
 
 from config import DB_PATH, USE_STUB, DEBUG, PORT, check_data_files
 from services.db_service import init_db, get_connection
-from services.pipeline_service import run_pipeline
+from services.pipeline_service import run_pipeline, start_job, get_job
 from services.drawing_analysis_service import analyze_drawing
+
+
+# ─── Временные файлы для фоновых задач ───────────────────────────────────────
+
+_TMP_DIR = ".tmp_pdf"
+
+
+def _save_uploaded_pdf(file_storage) -> str:
+    """Сохраняет загруженный PDF во временный файл и возвращает путь."""
+    os.makedirs(_TMP_DIR, exist_ok=True)
+    path = os.path.join(_TMP_DIR, f"job_{uuid.uuid4().hex[:12]}.pdf")
+    file_storage.save(path)
+    return path
 
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
@@ -43,7 +58,7 @@ STUB_OPERATIONS = [
     },
     {
         "деталь": "Вал ступенчатый (тестовые данные)",
-        "операция": "020 Фрезерная",
+        "операция": "015 Фрезерная",
         "t_шт_предложено": 8.3,
         "t_пз_предложено": 12.0,
         "режимы": "V=80 м/мин, Sz=0.05 мм/зуб, t=5.5 мм, n=1820 об/мин",
@@ -51,7 +66,7 @@ STUB_OPERATIONS = [
     },
     {
         "деталь": "Вал ступенчатый (тестовые данные)",
-        "операция": "030 Сверлильная",
+        "операция": "020 Сверлильная",
         "t_шт_предложено": 4.2,
         "t_пз_предложено": 8.0,
         "режимы": "V=25 м/мин, S=0.12 мм/об, n=1600 об/мин",
@@ -59,7 +74,7 @@ STUB_OPERATIONS = [
     },
     {
         "деталь": "Вал ступенчатый (тестовые данные)",
-        "операция": "040 Шлифовальная",
+        "операция": "025 Шлифовальная",
         "t_шт_предложено": 18.0,
         "t_пз_предложено": 20.0,
         "режимы": "Vк=35 м/с, Sпр=1.5 м/мин, t=0.02 мм, n=200 об/мин",
@@ -101,7 +116,7 @@ def index():
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze_route():
-    """Конвейер нормирования: 6 этапов, код управляет, модель помогает на узких местах."""
+    """Конвейер нормирования: 6 этапов. Запускается в фоне, фронт опрашивает /api/jobs/<id>."""
     chertezh = request.files.get("chertezh")
     if not chertezh or chertezh.filename == "":
         return jsonify({"error": "Необходимо загрузить чертёж детали"}), 400
@@ -122,20 +137,17 @@ def analyze_route():
             "stub": True,
         })
 
-    try:
-        result = run_pipeline(
-            chertezh_file=chertezh,
-            batch_size=batch_size,
-        )
+    pdf_path = _save_uploaded_pdf(chertezh)
+
+    def _run():
+        result = run_pipeline(chertezh_file=pdf_path, batch_size=batch_size)
         api_data = result.to_api_dict()
         api_data["stub"] = False
         api_data["operations"] = api_data.pop("операции")
-        return jsonify(api_data)
+        return api_data
 
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb, flush=True)
-        return jsonify({"error": f"{e}\n\nTraceback:\n{tb}"}), 500
+    job_id = start_job(_run, filename=chertezh.filename, kind="analyze", cleanup_paths=[pdf_path])
+    return jsonify({"job_id": job_id, "status": "running"}), 202
 
 
 @app.route("/api/analyze_drawing", methods=["POST"])
@@ -144,20 +156,25 @@ def analyze_drawing_route():
     if not chertezh or chertezh.filename == "":
         return jsonify({"error": "Необходимо загрузить чертёж детали"}), 400
 
-    try:
-        if USE_STUB:
-            return jsonify(STUB_DRAWING_RESULT)
+    if USE_STUB:
+        return jsonify(STUB_DRAWING_RESULT)
 
-        result = analyze_drawing(chertezh)
-        return jsonify(result)
+    pdf_path = _save_uploaded_pdf(chertezh)
 
-    except json.JSONDecodeError as e:
-        traceback.print_exc()
-        return jsonify({"error": f"Не удалось разобрать JSON от API: {str(e)}"}), 500
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb, flush=True)
-        return jsonify({"error": f"{e}\n\nTraceback:\n{tb}"}), 500
+    def _run():
+        return analyze_drawing(pdf_path)
+
+    job_id = start_job(_run, filename=chertezh.filename, kind="analyze_drawing", cleanup_paths=[pdf_path])
+    return jsonify({"job_id": job_id, "status": "running"}), 202
+
+
+@app.route("/api/jobs/<job_id>", methods=["GET"])
+def jobs_status(job_id):
+    """Статус фоновой задачи: active, stage, stage_name; result или error по завершении."""
+    j = get_job(job_id)
+    if j is None:
+        return jsonify({"error": "Задача не найдена"}), 404
+    return jsonify(j)
 
 
 @app.route("/api/confirm", methods=["POST"])
@@ -288,62 +305,62 @@ def products_analysis_status():
 
 @app.route("/api/products/analyze_part", methods=["POST"])
 def products_analyze_part():
-    """Анализирует один PDF из папки изделия и кэширует результат."""
+    """Анализирует один PDF из папки изделия. Запускает фоновую задачу."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Тело запроса пустое"}), 400
 
-    try:
-        result = analyze_part(
-            ptype=data.get("type", ""),
-            variant=data.get("variant", ""),
-            filename=data.get("filename", ""),
-        )
-        return jsonify(result)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    filename = data.get("filename", "")
+    if not filename:
+        return jsonify({"error": "Параметр filename обязателен"}), 400
+
+    def _run():
+        return analyze_part(ptype=ptype, variant=variant, filename=filename)
+
+    job_id = start_job(_run, filename=filename, kind="analyze_part")
+    return jsonify({"job_id": job_id, "status": "running"}), 202
 
 
 @app.route("/api/products/analyze_drawing", methods=["POST"])
 def products_analyze_drawing():
-    """Анализ чертежа детали из папки изделия."""
+    """Анализ чертежа детали из папки изделия. Запускает фоновую задачу."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Тело запроса пустое"}), 400
 
-    try:
-        result = analyze_drawing_disk(
-            ptype=data.get("type", ""),
-            variant=data.get("variant", ""),
-            filename=data.get("filename", ""),
-        )
-        return jsonify(result)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    filename = data.get("filename", "")
+    if not filename:
+        return jsonify({"error": "Параметр filename обязателен"}), 400
+
+    def _run():
+        return analyze_drawing_disk(ptype=ptype, variant=variant, filename=filename)
+
+    job_id = start_job(_run, filename=filename, kind="analyze_drawing_disk")
+    return jsonify({"job_id": job_id, "status": "running"}), 202
 
 
 @app.route("/api/products/extract_bom", methods=["POST"])
 def products_extract_bom():
-    """Извлекает спецификацию из сборочного чертежа."""
+    """Извлекает спецификацию из сборочного чертежа. Запускает фоновую задачу."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Тело запроса пустое"}), 400
 
-    try:
-        bom = extract_bom(
-            ptype=data.get("type", ""),
-            variant=data.get("variant", ""),
-            assembly_file=data.get("assembly_file", ""),
-        )
-        return jsonify({"bom": bom})
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    ptype = data.get("type", "")
+    variant = data.get("variant", "")
+    assembly_file = data.get("assembly_file", "")
+    if not assembly_file:
+        return jsonify({"error": "Параметр assembly_file обязателен"}), 400
+
+    def _run():
+        return {"bom": extract_bom(ptype=ptype, variant=variant, assembly_file=assembly_file)}
+
+    job_id = start_job(_run, filename=assembly_file, kind="extract_bom")
+    return jsonify({"job_id": job_id, "status": "running"}), 202
 
 
 @app.route("/api/products/save_qty", methods=["POST"])
