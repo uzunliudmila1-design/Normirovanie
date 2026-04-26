@@ -1,314 +1,319 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Нормирование производственных операций</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-base:       #0F1117;
-    --bg-surface:    #161A24;
-    --bg-card:       #1B2030;
-    --bg-card-hover: #1F2538;
-    --bg-elevated:   #232B3E;
-    --border-faint:  rgba(180,195,230,0.07);
-    --border-mid:    rgba(180,195,230,0.13);
-    --border-strong: rgba(180,195,230,0.22);
-    --accent:        #6B8EBF;
-    --accent-dim:    rgba(107,142,191,0.12);
-    --accent-light:  #8AAAD4;
-    --gold:          #B89A5A;
-    --gold-dim:      rgba(184,154,90,0.10);
-    --sage:          #5D8A6E;
-    --sage-dim:      rgba(93,138,110,0.10);
-    --muted-red:     #8A5050;
-    --muted-red-dim: rgba(138,80,80,0.10);
-    --text-primary:   #D8DFF0;
-    --text-secondary: #7D8BA8;
-    --text-muted:     #46526B;
-    --text-accent:    #8AAAD4;
-    --font-ui:   'Manrope', sans-serif;
-    --font-body: 'IBM Plex Sans', sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
-    --r-sm: 6px; --r-md: 10px; --r-lg: 16px;
+    --bg:            #0d1219;
+    --sidebar-bg:    #111720;
+    --card-bg:       #151d28;
+    --card2-bg:      #1a2333;
+    --border:        rgba(255,255,255,0.07);
+    --border2:       rgba(255,255,255,0.13);
+    --teal:          #00c2b8;
+    --teal-light:    rgba(0,194,184,0.12);
+    --amber:         #f5a623;
+    --amber-light:   rgba(245,166,35,0.13);
+    --green:         #22d38a;
+    --green-light:   rgba(34,211,138,0.12);
+    --red:           #ff4d6d;
+    --red-light:     rgba(255,77,109,0.13);
+    --blue:          #4a9eff;
+    --blue-light:    rgba(74,158,255,0.12);
+    --purple:        #a78bfa;
+    --purple-light:  rgba(167,139,250,0.12);
+    --orange:        #ff8c32;
+    --orange-light:  rgba(255,140,50,0.13);
+    --text:          #e2e8f0;
+    --text2:         #8896a6;
+    --text3:         #4d6070;
+    --r-sm: 8px; --r-md: 10px; --r-lg: 14px;
   }
   :root.light {
-    --bg-base:       #F2F4F8;
-    --bg-surface:    #FFFFFF;
-    --bg-card:       #FFFFFF;
-    --bg-card-hover: #EEF1F7;
-    --bg-elevated:   #E8ECF4;
-    --border-faint:  rgba(50,70,130,0.08);
-    --border-mid:    rgba(50,70,130,0.14);
-    --border-strong: rgba(50,70,130,0.24);
-    --accent:        #4A72A8;
-    --accent-dim:    rgba(74,114,168,0.09);
-    --accent-light:  #3560A0;
-    --gold:          #9A7830;
-    --gold-dim:      rgba(154,120,48,0.09);
-    --sage:          #3D7050;
-    --sage-dim:      rgba(61,112,80,0.09);
-    --muted-red:     #8A3030;
-    --muted-red-dim: rgba(138,48,48,0.08);
-    --text-primary:   #1A2035;
-    --text-secondary: #4A5570;
-    --text-muted:     #8A96B0;
-    --text-accent:    #3560A0;
+    --bg:            #f0f2f7;
+    --sidebar-bg:    #ffffff;
+    --card-bg:       #ffffff;
+    --card2-bg:      #f7f8fb;
+    --border:        rgba(0,0,0,0.07);
+    --border2:       rgba(0,0,0,0.13);
+    --teal:          #008f7e;
+    --teal-light:    #d0f0ec;
+    --teal-mid:      rgba(0,143,126,0.2);
+    --teal-border:   rgba(0,143,126,0.35);
+    --amber:         #c47300;
+    --amber-light:   #ffeec4;
+    --green:         #007a54;
+    --green-light:   #d0f0e4;
+    --red:           #d4183a;
+    --red-light:     #ffe0e5;
+    --blue:          #1460d4;
+    --blue-light:    #deeaff;
+    --purple:        #6d3fd4;
+    --purple-light:  #ece0ff;
+    --orange:        #c44e00;
+    --orange-light:  #ffe3d0;
+    --text:          #0e1622;
+    --text2:         #4a5a70;
+    --text3:         #8fa0b4;
   }
-  :root.light .topbar { background: rgba(242,244,248,0.97); }
-  :root.light .justif-block { background: rgba(230,235,245,0.6); }
-  :root.light thead th { background: #EEF1F7; }
-  :root.light .table-footer { background: #F7F9FC; }
-  :root.light .session-tfoot-row { background: #EEF1F7; }
-  :root.light .part-group-header td { background: rgba(74,114,168,0.08); color: var(--accent); }
+  :root.light .topbar { background: rgba(240,242,247,0.97); }
+  :root.light .justif-block { background: rgba(247,248,251,0.6); }
+  :root.light thead th { background: #f7f8fb; }
+  :root.light .table-footer { background: #f7f8fb; }
+  :root.light .session-tfoot-row { background: #f7f8fb; }
+  :root.light .part-group-header td { background: rgba(0,143,126,0.08); color: var(--teal); }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { transition: background 0.25s, color 0.25s; }
-  body { background: var(--bg-base); color: var(--text-primary); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Onest', sans-serif; font-size: 14px; line-height: 1.5; min-height: 100vh; }
 
   /* THEME TOGGLE */
-  .theme-toggle { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--r-sm); background: var(--bg-elevated); border: 1px solid var(--border-mid); cursor: pointer; transition: all 0.15s; user-select: none; }
-  .theme-toggle:hover { border-color: var(--border-strong); }
-  .theme-toggle-track { width: 30px; height: 16px; border-radius: 8px; background: var(--bg-base); border: 1px solid var(--border-mid); position: relative; transition: background 0.2s; flex-shrink: 0; }
-  :root.light .theme-toggle-track { background: var(--accent-dim); border-color: var(--accent); }
-  .theme-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--text-muted); transition: all 0.2s; }
-  :root.light .theme-toggle-thumb { left: 16px; background: var(--accent); }
-  .theme-toggle-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.04em; min-width: 32px; }
+  .theme-toggle { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--r-sm); background: var(--card2-bg); border: 1px solid var(--border2); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .theme-toggle:hover { border-color: var(--border2); }
+  .theme-toggle-track { width: 30px; height: 16px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border2); position: relative; transition: background 0.2s; flex-shrink: 0; }
+  :root.light .theme-toggle-track { background: var(--teal-light); border-color: var(--teal); }
+  .theme-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--text3); transition: all 0.2s; }
+  :root.light .theme-toggle-thumb { left: 16px; background: var(--teal); }
+  .theme-toggle-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 0.04em; min-width: 32px; }
 
   /* TOPBAR */
-  .topbar { position: sticky; top: 0; z-index: 100; background: rgba(15,17,23,0.96); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-faint); padding: 0 24px; height: 54px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar { position: sticky; top: 0; z-index: 100; background: rgba(13,18,25,0.96); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 54px; display: flex; align-items: center; justify-content: space-between; }
   .topbar-left { display: flex; align-items: center; gap: 14px; }
-  .logo-mark { width: 30px; height: 30px; background: var(--bg-elevated); border: 1px solid var(--border-mid); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .app-title { font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
-  .app-sub { font-size: 11px; color: var(--text-muted); }
-  .badge-mvp { font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-mid); letter-spacing: 0.06em; }
+  .logo-mark { width: 30px; height: 30px; background: var(--card2-bg); border: 1px solid var(--border2); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .app-title { font-family: 'Onest', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+  .app-sub { font-size: 11px; color: var(--text3); }
+  .badge-mvp { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--card2-bg); color: var(--text2); border: 1px solid var(--border2); letter-spacing: 0.06em; }
   .topbar-right { display: flex; align-items: center; gap: 10px; }
-  .nav-pill { font-size: 12px; color: var(--text-muted); padding: 5px 11px; border-radius: var(--r-sm); cursor: pointer; transition: all 0.15s; }
-  .nav-pill:hover { color: var(--text-secondary); background: var(--bg-elevated); }
-  .nav-pill.active { color: var(--text-accent); background: var(--accent-dim); }
-  .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border-mid); display: flex; align-items: center; justify-content: center; font-family: var(--font-ui); font-size: 11px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+  .nav-pill { font-size: 12px; color: var(--text3); padding: 5px 11px; border-radius: var(--r-sm); cursor: pointer; transition: all 0.15s; }
+  .nav-pill:hover { color: var(--text2); background: var(--card2-bg); }
+  .nav-pill.active { color: var(--teal); background: var(--teal-light); }
+  .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--card2-bg); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: 'Onest', sans-serif; font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer; }
 
   /* LAYOUT */
   .page-wrapper { display: grid; grid-template-columns: 248px 1fr; min-height: calc(100vh - 54px); }
 
   /* SIDEBAR */
-  .sidebar { background: var(--bg-surface); border-right: 1px solid var(--border-faint); padding: 18px 10px; display: flex; flex-direction: column; gap: 2px; }
-  .sidebar-section-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; color: var(--text-muted); padding: 8px 10px 3px; text-transform: uppercase; }
-  .sidebar-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; transition: all 0.12s; color: var(--text-muted); font-size: 12.5px; }
-  .sidebar-item:hover { background: var(--bg-elevated); color: var(--text-secondary); }
-  .sidebar-item.active { background: var(--accent-dim); color: var(--text-accent); border-left: 2px solid var(--accent); padding-left: 8px; }
+  .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 18px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-section-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--text3); padding: 8px 10px 3px; text-transform: uppercase; }
+  .sidebar-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; transition: all 0.12s; color: var(--text3); font-size: 12.5px; }
+  .sidebar-item:hover { background: var(--card2-bg); color: var(--text2); }
+  .sidebar-item.active { background: var(--teal-light); color: var(--teal); border-left: 2px solid var(--teal); padding-left: 8px; }
   .sidebar-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
   .sidebar-item.active svg { opacity: 1; }
-  .sidebar-count { margin-left: auto; font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border-radius: 8px; background: var(--bg-elevated); color: var(--text-muted); }
-  .sidebar-item.active .sidebar-count { background: var(--accent-dim); color: var(--accent); }
-  .sidebar-divider { height: 1px; background: var(--border-faint); margin: 6px 10px; }
+  .sidebar-count { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 1px 6px; border-radius: 8px; background: var(--card2-bg); color: var(--text3); }
+  .sidebar-item.active .sidebar-count { background: var(--teal-light); color: var(--teal); }
+  .sidebar-divider { height: 1px; background: var(--border); margin: 6px 10px; }
   .sidebar-meta { padding: 0 10px 8px; }
-  .sidebar-meta-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
-  .sidebar-meta-val { font-size: 11.5px; color: var(--text-secondary); font-family: var(--font-mono); line-height: 1.5; word-break: break-all; }
+  .sidebar-meta-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+  .sidebar-meta-val { font-size: 11.5px; color: var(--text2); font-family: 'JetBrains Mono', monospace; line-height: 1.5; word-break: break-all; }
 
   /* MAIN */
   .main-content { padding: 26px 30px; overflow-x: auto; }
-  .breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
-  .breadcrumb span { color: var(--text-secondary); }
-  .page-title { font-family: var(--font-ui); font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
-  .page-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); margin-bottom: 5px; }
+  .breadcrumb span { color: var(--text2); }
+  .page-title { font-family: 'Onest', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .page-desc { font-size: 12px; color: var(--text3); margin-top: 3px; }
   .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
 
   /* STEPS */
   .steps { display: flex; align-items: center; gap: 0; margin-bottom: 22px; }
-  .step { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--text-muted); }
-  .step.done { color: var(--sage); }
-  .step.active { color: var(--text-primary); }
-  .step-num { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 9px; font-weight: 500; background: var(--bg-elevated); border: 1px solid var(--border-mid); flex-shrink: 0; }
-  .step.done .step-num { background: var(--sage-dim); border-color: var(--sage); color: var(--sage); }
-  .step.active .step-num { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-  .step-line { width: 28px; height: 1px; background: var(--border-faint); flex-shrink: 0; }
-  .step.done + .step-line { background: var(--sage); opacity: 0.3; }
+  .step { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--text3); }
+  .step.done { color: var(--green); }
+  .step.active { color: var(--text); }
+  .step-num { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; background: var(--card2-bg); border: 1px solid var(--border2); flex-shrink: 0; }
+  .step.done .step-num { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .step.active .step-num { background: var(--teal-light); border-color: var(--teal); color: var(--teal); }
+  .step-line { width: 28px; height: 1px; background: var(--border); flex-shrink: 0; }
+  .step.done + .step-line { background: var(--green); opacity: 0.3; }
 
   /* STATS */
   .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
-  .stat-card { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-md); padding: 12px 14px; position: relative; overflow: hidden; transition: border-color 0.2s; }
-  .stat-card:hover { border-color: var(--border-mid); }
+  .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 14px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .stat-card:hover { border-color: var(--border2); }
   .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-  .stat-card.ca::before { background: var(--accent); opacity: 0.55; }
-  .stat-card.cg::before { background: var(--gold); opacity: 0.55; }
-  .stat-card.cb::before { background: var(--accent-light); opacity: 0.45; }
-  .stat-card.cs::before { background: var(--sage); opacity: 0.55; }
-  .stat-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 7px; }
-  .stat-value { font-family: var(--font-mono); font-size: 22px; font-weight: 500; color: var(--text-primary); line-height: 1; }
-  .stat-unit { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .stat-card.ca::before { background: var(--teal); opacity: 0.55; }
+  .stat-card.cg::before { background: var(--amber); opacity: 0.55; }
+  .stat-card.cb::before { background: var(--teal); opacity: 0.45; }
+  .stat-card.cs::before { background: var(--green); opacity: 0.55; }
+  .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 7px; }
+  .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; color: var(--text); line-height: 1; }
+  .stat-unit { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
   /* TWO-COL */
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
 
   /* PANEL */
-  .panel { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-lg); overflow: hidden; animation: fadeUp 0.25s ease both; }
+  .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; animation: fadeUp 0.25s ease both; }
   .panel:nth-child(2) { animation-delay: 0.05s; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  .panel-header { padding: 13px 18px; border-bottom: 1px solid var(--border-faint); display: flex; align-items: center; justify-content: space-between; }
-  .panel-title { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
-  .panel-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: 0.7; }
+  .panel-header { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-family: 'Onest', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .panel-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); opacity: 0.7; }
   .panel-body { padding: 18px; }
 
   /* FIELDS */
   .field-group { margin-bottom: 13px; }
-  .field-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
-  .field-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-mid); border-radius: var(--r-sm); padding: 8px 11px; color: var(--text-primary); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color 0.15s; }
-  .field-input:focus { border-color: var(--accent); }
-  .field-input::placeholder { color: var(--text-muted); }
+  .field-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+  .field-input { width: 100%; background: var(--card2-bg); border: 1px solid var(--border2); border-radius: var(--r-sm); padding: 8px 11px; color: var(--text); font-family: 'Onest', sans-serif; font-size: 13px; outline: none; transition: border-color 0.15s; }
+  .field-input:focus { border-color: var(--teal); }
+  .field-input::placeholder { color: var(--text3); }
   select.field-input { cursor: pointer; }
 
   /* UPLOADS */
   .upload-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .upload-zone { border: 1px dashed var(--border-mid); border-radius: var(--r-md); padding: 16px 14px; text-align: center; cursor: pointer; transition: all 0.18s; background: var(--bg-surface); position: relative; }
-  .upload-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
-  .upload-zone.filled { border-style: solid; border-color: var(--accent); background: var(--accent-dim); }
+  .upload-zone { border: 1px dashed var(--border2); border-radius: var(--r-md); padding: 16px 14px; text-align: center; cursor: pointer; transition: all 0.18s; background: var(--sidebar-bg); position: relative; }
+  .upload-zone:hover { border-color: var(--teal); background: var(--teal-light); }
+  .upload-zone.filled { border-style: solid; border-color: var(--teal); background: var(--teal-light); }
   .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .upload-icon { width: 32px; height: 32px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; background: var(--bg-elevated); }
-  .upload-zone.filled .upload-icon { background: rgba(107,142,191,0.12); }
-  .upload-type { font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--text-primary); }
-  .upload-hint { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
-  .upload-filename { font-size: 10px; color: var(--text-accent); font-family: var(--font-mono); margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .badge-opt { display: inline-block; font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-top: 4px; background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-faint); }
-  .badge-req { display: inline-block; font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-top: 4px; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(184,154,90,0.2); }
-  .route-summary { margin: 0 0 0 0; border-bottom: 1px solid var(--border-faint); background: var(--bg-elevated); }
+  .upload-icon { width: 32px; height: 32px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; background: var(--card2-bg); }
+  .upload-zone.filled .upload-icon { background: rgba(0,194,184,0.12); }
+  .upload-type { font-family: 'Onest', sans-serif; font-size: 12px; font-weight: 600; color: var(--text); }
+  .upload-hint { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+  .upload-filename { font-size: 10px; color: var(--teal); font-family: 'JetBrains Mono', monospace; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge-opt { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-top: 4px; background: var(--card2-bg); color: var(--text3); border: 1px solid var(--border); }
+  .badge-req { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-top: 4px; background: var(--amber-light); color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
+  .route-summary { margin: 0 0 0 0; border-bottom: 1px solid var(--border); background: var(--card2-bg); }
   .route-summary-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; user-select: none; }
-  .route-summary-header:hover { background: var(--accent-dim); }
-  .route-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(107,142,191,0.12); border: 1px solid rgba(107,142,191,0.25); border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
-  .route-ops { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .route-summary-header:hover { background: var(--teal-light); }
+  .route-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--teal); background: rgba(0,194,184,0.12); border: 1px solid rgba(0,194,184,0.25); border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
+  .route-ops { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .route-confidence { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .route-confidence-bar { width: 60px; height: 6px; border-radius: 3px; background: var(--border-faint); overflow: hidden; }
+  .route-confidence-bar { width: 60px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
   .route-confidence-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-  .route-confidence-val { font-family: var(--font-mono); font-size: 11px; font-weight: 700; min-width: 32px; text-align: right; }
-  .route-toggle { width: 18px; height: 18px; flex-shrink: 0; color: var(--text-muted); transition: transform 0.2s; }
+  .route-confidence-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; min-width: 32px; text-align: right; }
+  .route-toggle { width: 18px; height: 18px; flex-shrink: 0; color: var(--text3); transition: transform 0.2s; }
   .route-toggle.open { transform: rotate(180deg); }
   .route-body { padding: 0 16px 12px 16px; display: none; }
   .route-body.open { display: block; }
-  .route-justif-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .route-justif-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
-  .route-conf-note { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+  .route-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .route-justif-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .route-conf-note { font-size: 11px; color: var(--text3); margin-top: 8px; font-style: italic; }
 
   /* STATUS */
   .status-bar { display: none; margin-top: 12px; }
-  .status-bar.info { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--accent-dim); border: 1px solid rgba(107,142,191,0.2); color: var(--text-accent); font-size: 12px; }
-  .status-bar.success { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--sage-dim); border: 1px solid rgba(93,138,110,0.2); color: #7AB890; font-size: 12px; }
-  .status-bar.error { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--muted-red-dim); border: 1px solid rgba(138,80,80,0.2); color: #C07070; font-size: 12px; }
+  .status-bar.info { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--teal-light); border: 1px solid rgba(0,194,184,0.2); color: var(--teal); font-size: 12px; }
+  .status-bar.success { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--green-light); border: 1px solid rgba(34,211,138,0.2); color: var(--green); font-size: 12px; }
+  .status-bar.error { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--red-light); border: 1px solid rgba(255,77,109,0.2); color: var(--red); font-size: 12px; }
   .status-dot-s { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .status-bar.info .status-dot-s { background: var(--accent); }
-  .status-bar.success .status-dot-s { background: var(--sage); }
-  .status-bar.error .status-dot-s { background: var(--muted-red); }
+  .status-bar.info .status-dot-s { background: var(--teal); }
+  .status-bar.success .status-dot-s { background: var(--green); }
+  .status-bar.error .status-dot-s { background: var(--red); }
 
   /* LOADER */
-  .loader { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(107,142,191,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  .loader { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(0,194,184,0.3); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .stage-progress-indicator { display: inline-block; animation: stagePulse 1.8s ease-in-out infinite; color: var(--teal); font-weight: 600; }
+  @keyframes stagePulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
 
   /* BUTTONS */
-  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: var(--r-sm); font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.13s; border: none; letter-spacing: 0.01em; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: var(--r-sm); font-family: 'Onest', sans-serif; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.13s; border: none; letter-spacing: 0.01em; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-primary { background: var(--accent); color: #0F1117; }
-  .btn-primary:hover:not(:disabled) { background: var(--accent-light); }
+  .btn-primary { background: var(--teal); color: #0d1219; }
+  .btn-primary:hover:not(:disabled) { background: var(--teal); }
   .btn-primary:active:not(:disabled) { transform: scale(0.98); }
-  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-mid); }
-  .btn-ghost:hover:not(:disabled) { background: var(--bg-elevated); color: var(--text-secondary); }
-  .btn-del { background: var(--muted-red-dim); color: #B07070; border: 1px solid rgba(138,80,80,0.18); }
-  .btn-del:hover:not(:disabled) { background: rgba(138,80,80,0.18); }
-  .btn-add { background: var(--sage-dim); color: #7AB890; border: 1px solid rgba(93,138,110,0.22); }
-  .btn-add:hover:not(:disabled) { background: rgba(93,138,110,0.18); }
-  .btn-excel { background: rgba(93,138,80,0.12); color: #85B870; border: 1px solid rgba(93,138,80,0.22); }
-  .btn-excel:hover:not(:disabled) { background: rgba(93,138,80,0.2); }
+  .btn-ghost { background: transparent; color: var(--text3); border: 1px solid var(--border2); }
+  .btn-ghost:hover:not(:disabled) { background: var(--card2-bg); color: var(--text2); }
+  .btn-del { background: var(--red-light); color: var(--red); border: 1px solid rgba(255,77,109,0.18); }
+  .btn-del:hover:not(:disabled) { background: rgba(255,77,109,0.18); }
+  .btn-add { background: var(--green-light); color: var(--green); border: 1px solid rgba(34,211,138,0.22); }
+  .btn-add:hover:not(:disabled) { background: rgba(34,211,138,0.18); }
+  .btn-excel { background: var(--green-light); color: var(--green); border: 1px solid rgba(34,211,138,0.22); }
+  .btn-excel:hover:not(:disabled) { background: rgba(34,211,138,0.2); }
   .btn-row { display: flex; gap: 8px; margin-top: 14px; align-items: center; flex-wrap: wrap; }
 
   /* MODEL BAR */
-  .model-bar { margin-top: 10px; padding: 10px 12px; background: var(--bg-surface); border-radius: var(--r-sm); border: 1px solid var(--border-faint); display: flex; align-items: center; gap: 8px; }
-  .model-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); flex-shrink: 0; }
-  .model-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
-  .model-text { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .model-bar { margin-top: 10px; padding: 10px 12px; background: var(--sidebar-bg); border-radius: var(--r-sm); border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .model-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .model-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+  .model-text { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); }
 
   /* RESULTS / SESSION / HISTORY PANELS */
   .results-panel, .session-panel, .history-panel {
-    background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-lg);
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-lg);
     overflow: hidden; animation: fadeUp 0.3s ease 0.1s both; margin-bottom: 20px; display: none;
   }
   .results-panel.visible, .session-panel.visible { display: block; }
   .history-panel { display: block; }
 
   .results-header, .session-header, .history-header {
-    padding: 13px 18px; border-bottom: 1px solid var(--border-faint);
+    padding: 13px 18px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   }
   .history-header { cursor: pointer; user-select: none; transition: background 0.15s; }
-  .history-header:hover { background: var(--bg-card-hover); }
+  .history-header:hover { background: var(--card2-bg); }
 
   .results-title-group { display: flex; align-items: center; gap: 10px; }
-  .results-title { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--text-primary); }
-  .results-count { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); }
+  .results-title { font-family: 'Onest', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); }
+  .results-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--teal-light); color: var(--teal); border: 1px solid rgba(0,194,184,0.2); }
   .results-actions { display: flex; gap: 7px; flex-wrap: wrap; }
-  .history-toggle-icon { font-size: 0.75rem; color: var(--text-muted); transition: transform 0.2s; display: inline-block; }
+  .history-toggle-icon { font-size: 0.75rem; color: var(--text3); transition: transform 0.2s; display: inline-block; }
   .history-panel.expanded .history-toggle-icon { transform: rotate(180deg); }
   .history-body { display: none; }
   .history-panel.expanded .history-body { display: block; }
 
   /* TABLE */
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  thead th { background: var(--bg-surface); color: var(--text-muted); font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--border-faint); white-space: nowrap; }
-  thead th.num-col { text-align: right; }
-  tbody tr.data-row { border-bottom: 1px solid var(--border-faint); transition: background 0.1s; }
-  tbody tr.data-row:hover { background: var(--bg-card-hover); }
-  tbody tr.justif-row { border-bottom: 1px solid var(--border-faint); }
-  td { padding: 9px 11px; color: var(--text-secondary); vertical-align: middle; }
-  td.idx { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); width: 32px; }
-  td.part { color: var(--text-primary); font-size: 12px; font-weight: 500; min-width: 140px; max-width: 180px; line-height: 1.35; }
-  td.op { color: var(--text-accent); font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
-  td.equip { color: var(--text-muted); font-size: 11.5px; max-width: 200px; line-height: 1.3; }
-  td.num { text-align: right; }
-  td.modes { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); white-space: pre-line; max-width: 160px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  thead th { background: var(--sidebar-bg); color: var(--text3); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 9px 11px; text-align: left; border: 1px solid var(--border); white-space: nowrap; }
+  thead th.num-col { text-align: center; }
+  tbody tr.data-row { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr.data-row:hover { background: var(--card2-bg); }
+  tbody tr.justif-row { border-bottom: 1px solid var(--border); }
+  td { padding: 9px 11px; color: var(--text2); vertical-align: middle; border: 1px solid var(--border); }
+  td.idx { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); width: 32px; }
+  td.part { color: var(--text); font-size: 12px; font-weight: 500; min-width: 140px; max-width: 180px; line-height: 1.35; }
+  td.op { color: var(--teal); font-family: 'JetBrains Mono', monospace; font-size: 11px; white-space: nowrap; }
+  td.equip { color: var(--text3); font-size: 11.5px; max-width: 200px; line-height: 1.3; }
+  td.num { text-align: center; }
+  td.modes { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text3); white-space: pre-line; max-width: 160px; }
   td.toggle-cell { width: 32px; padding: 0 8px; }
-  td.hist-date { white-space: nowrap; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); }
-  td.hist-reason { max-width: 240px; font-size: 11px; line-height: 1.4; color: var(--text-muted); }
+  td.hist-date { white-space: nowrap; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text3); }
+  td.hist-reason { max-width: 240px; font-size: 11px; line-height: 1.4; color: var(--text3); }
 
-  .ai-chip { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 3px; background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-faint); white-space: nowrap; }
-  .ai-chip.ok { background: var(--accent-dim); color: var(--accent); border-color: rgba(107,142,191,0.2); }
-  .num-val { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--text-primary); }
-  .num-input { background: var(--bg-elevated); border: 1px solid var(--border-mid); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; font-weight: 500; width: 66px; padding: 3px 7px; text-align: right; outline: none; transition: border-color 0.13s; }
-  .num-input:focus { border-color: var(--accent); }
-  .num-input.modified { border-color: var(--gold); background: var(--gold-dim); }
+  .ai-chip { display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-bottom: 3px; background: var(--card2-bg); color: var(--text3); border: 1px solid var(--border); white-space: nowrap; }
+  .ai-chip.ok { background: var(--teal-light); color: var(--teal); border-color: rgba(0,194,184,0.2); }
+  .num-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); }
+  .num-input { background: var(--card2-bg); border: 1px solid var(--border2); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; width: 66px; padding: 3px 7px; text-align: right; outline: none; transition: border-color 0.13s; }
+  .num-input:focus { border-color: var(--teal); }
+  .num-input.modified { border-color: var(--amber); background: var(--amber-light); }
 
   /* JUSTIFICATION SUB-ROW */
   tr.justif-row td { padding: 0; }
-  .justif-block { display: flex; background: rgba(15,17,23,0.5); border-top: 1px solid var(--border-faint); }
-  .justif-stripe { width: 2px; background: var(--accent); opacity: 0.35; flex-shrink: 0; }
+  .justif-block { display: flex; background: rgba(13,18,25,0.5); border-top: 1px solid var(--border); }
+  .justif-stripe { width: 2px; background: var(--teal); opacity: 0.35; flex-shrink: 0; }
   .justif-inner { padding: 9px 14px; flex: 1; }
-  .justif-meta { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
-  .justif-text { font-size: 12px; color: var(--text-secondary); line-height: 1.65; max-width: 960px; }
+  .justif-meta { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .justif-text { font-size: 12px; color: var(--text2); line-height: 1.65; max-width: 960px; }
 
   /* TOGGLE BUTTON */
-  .toggle-btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; background: var(--bg-elevated); border: 1px solid var(--border-mid); cursor: pointer; transition: all 0.15s; color: var(--text-muted); }
-  .toggle-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--text-accent); }
+  .toggle-btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; background: var(--card2-bg); border: 1px solid var(--border2); cursor: pointer; transition: all 0.15s; color: var(--text3); }
+  .toggle-btn:hover { background: var(--teal-light); border-color: var(--teal); color: var(--teal); }
   .toggle-btn svg { width: 10px; height: 10px; transition: transform 0.2s; }
   .toggle-btn.open svg { transform: rotate(180deg); }
 
   /* SESSION TABLE */
-  .part-group-header td { background: var(--bg-elevated); color: var(--text-accent); font-weight: 600; font-size: 11.5px; padding: 7px 12px; border-top: 1px solid var(--border-mid); font-family: var(--font-mono); }
-  .session-tfoot-row td { background: var(--bg-elevated); font-size: 11px; color: var(--text-secondary); padding: 8px 11px; border-top: 1px solid var(--border-mid); }
-  .total-chip { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); }
+  .part-group-header td { background: var(--card2-bg); color: var(--teal); font-weight: 600; font-size: 11.5px; padding: 7px 12px; border-top: 1px solid var(--border2); font-family: 'JetBrains Mono', monospace; }
+  .session-tfoot-row td { background: var(--card2-bg); font-size: 11px; color: var(--text2); padding: 8px 11px; border-top: 1px solid var(--border2); }
+  .total-chip { display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--teal-light); color: var(--teal); border: 1px solid rgba(0,194,184,0.2); }
 
   /* TABLE FOOTER */
-  .table-footer { padding: 9px 18px; border-top: 1px solid var(--border-faint); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  .table-footer-note { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .table-footer { padding: 9px 18px; border-top: 1px solid var(--border); background: var(--sidebar-bg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .table-footer-note { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); }
 
   /* EMPTY STATE */
-  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 13px; }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text3); font-size: 13px; }
 
   /* DRAWING ANALYSIS PANEL */
   .drawing-panel { display: none; }
   .drawing-panel.visible { display: block; }
   .drawing-layout { display: grid; grid-template-columns: 1fr 420px; gap: 16px; align-items: start; }
-  .drawing-viewer-col { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-lg); overflow: hidden; }
-  .drawing-viewer-header { padding: 11px 16px; border-bottom: 1px solid var(--border-faint); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-  .drawing-viewer-title { font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+  .drawing-viewer-col { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+  .drawing-viewer-header { padding: 11px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .drawing-viewer-title { font-family: 'Onest', sans-serif; font-size: 12.5px; font-weight: 600; color: var(--text); }
   .drawing-viewer-controls { display: flex; gap: 6px; }
   .drawing-canvas-wrap { position: relative; background: #1a1a1a; min-height: 200px; display: flex; align-items: center; justify-content: center; }
   :root.light .drawing-canvas-wrap { background: #e0e0e0; }
@@ -317,153 +322,37 @@
   .drawing-highlight { position: absolute; border-radius: 3px; transition: opacity 0.2s; pointer-events: none; }
   .drawing-highlight.remark { background: rgba(220,80,80,0.18); border: 1.5px solid rgba(220,80,80,0.6); }
   .drawing-highlight.optimization { background: rgba(80,140,220,0.16); border: 1.5px solid rgba(80,140,220,0.55); }
-  .drawing-upload-placeholder { padding: 48px 24px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .drawing-upload-placeholder { padding: 48px 24px; text-align: center; color: var(--text3); font-size: 13px; }
 
-  .drawing-remarks-col { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-lg); overflow: hidden; position: sticky; top: 70px; }
-  .drawing-remarks-header { padding: 11px 16px; border-bottom: 1px solid var(--border-faint); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .drawing-remarks-title { font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
-  .drawing-summary { padding: 12px 16px; background: var(--bg-elevated); border-bottom: 1px solid var(--border-faint); font-size: 12px; color: var(--text-secondary); line-height: 1.55; display: none; }
+  .drawing-remarks-col { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; position: sticky; top: 70px; }
+  .drawing-remarks-header { padding: 11px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .drawing-remarks-title { font-family: 'Onest', sans-serif; font-size: 12.5px; font-weight: 600; color: var(--text); }
+  .drawing-summary { padding: 12px 16px; background: var(--card2-bg); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text2); line-height: 1.55; display: none; }
   .drawing-summary.visible { display: block; }
-  .drawing-section-label { padding: 8px 16px 4px; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .drawing-section-label { padding: 8px 16px 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
   .drawing-remarks-list { max-height: calc(100vh - 240px); overflow-y: auto; }
 
-  .remark-item { border-bottom: 1px solid var(--border-faint); padding: 11px 16px; transition: background 0.12s; cursor: default; }
-  .remark-item:hover { background: var(--bg-card-hover); }
+  .remark-item { border-bottom: 1px solid var(--border); padding: 11px 16px; transition: background 0.12s; cursor: default; }
+  .remark-item:hover { background: var(--card2-bg); }
   .remark-item-header { display: flex; align-items: flex-start; gap: 8px; }
-  .remark-eye-btn { flex-shrink: 0; width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border-mid); background: var(--bg-elevated); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.14s; margin-top: 1px; }
-  .remark-eye-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .remark-eye-btn { flex-shrink: 0; width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border2); background: var(--card2-bg); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text3); transition: all 0.14s; margin-top: 1px; }
+  .remark-eye-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-light); }
   .remark-eye-btn.hidden-remark { opacity: 0.35; }
   .remark-eye-btn svg { width: 12px; height: 12px; }
   .remark-badges { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
-  .remark-type-badge { font-family: var(--font-mono); font-size: 8.5px; padding: 2px 6px; border-radius: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .remark-type-badge { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; padding: 2px 6px; border-radius: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
   .remark-type-badge.zamechaniye { background: rgba(220,80,80,0.14); color: #CC6060; border: 1px solid rgba(220,80,80,0.3); }
   .remark-type-badge.optimizaciya { background: rgba(80,140,220,0.13); color: #6090CC; border: 1px solid rgba(80,140,220,0.3); }
-  .remark-priority { font-family: var(--font-mono); font-size: 8px; padding: 2px 5px; border-radius: 3px; }
+  .remark-priority { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 2px 5px; border-radius: 3px; }
   .remark-priority.high { background: rgba(220,80,80,0.1); color: #BB5050; }
-  .remark-priority.mid { background: var(--gold-dim); color: var(--gold); }
-  .remark-priority.low { background: var(--bg-elevated); color: var(--text-muted); }
-  .remark-cat { font-family: var(--font-mono); font-size: 8px; padding: 2px 5px; border-radius: 3px; background: var(--bg-elevated); color: var(--text-muted); }
-  .remark-title { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-top: 7px; line-height: 1.3; }
-  .remark-desc { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
-  .remark-suggestion { font-size: 11px; color: var(--text-accent); margin-top: 5px; padding: 5px 9px; background: var(--accent-dim); border-radius: 4px; border-left: 2px solid var(--accent); line-height: 1.45; }
-  .drawing-empty { padding: 36px 24px; text-align: center; color: var(--text-muted); font-size: 12.5px; }
-
-  /* PRODUCTS PANEL */
-  .products-panel { display: none; }
-  .products-panel.visible { display: block; }
-  .products-header { margin-bottom: 20px; }
-  .products-title { font-family: var(--font-ui); font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 4px 0 0; }
-
-  /* SIDEBAR TREE */
-  .sidebar-tree-toggle { display: flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 12px; color: var(--text-secondary); cursor: pointer; border-radius: var(--r-sm); transition: background 0.12s, color 0.12s; user-select: none; }
-  .sidebar-tree-toggle:hover { background: var(--bg-card-hover); color: var(--text-primary); }
-  .sidebar-tree-toggle .chevron { font-size: 9px; transition: transform 0.15s; display: inline-block; width: 12px; text-align: center; flex-shrink: 0; }
-  .sidebar-tree-toggle .chevron.open { transform: rotate(90deg); }
-  .sidebar-tree-toggle .tree-count { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-left: auto; }
-  .sidebar-tree-children { display: none; }
-  .sidebar-tree-children.open { display: block; }
-  .sidebar-sub-item { display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 32px; font-size: 11.5px; color: var(--text-secondary); cursor: pointer; border-radius: var(--r-sm); transition: background 0.12s, color 0.12s; }
-  .sidebar-sub-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
-  .sidebar-sub-item.active { background: var(--accent-dim); color: var(--text-accent); }
-  .sidebar-sub-item.empty { color: var(--text-muted); font-style: italic; }
-
-  /* FILE GRID */
-  .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 16px; }
-  .file-card { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-md); overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
-  .file-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(107,142,191,0.12); }
-  .file-card-thumb { height: 200px; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .file-card-thumb canvas { max-width: 100%; max-height: 100%; display: block; }
-  .file-card-name { padding: 8px 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
-  .file-folder-section { margin-bottom: 20px; }
-  .file-folder-header { display: flex; align-items: center; gap: 6px; padding: 8px 0; font-size: 13px; font-weight: 600; color: var(--text-primary); cursor: pointer; user-select: none; }
-  .file-folder-header .chevron { font-size: 10px; transition: transform 0.15s; display: inline-block; }
-  .file-folder-header .chevron.open { transform: rotate(90deg); }
-  .products-empty { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 13px; }
-
-  /* PRODUCT TOTALS */
-  .product-totals { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
-  .product-total-card { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-md); padding: 12px 18px; min-width: 140px; }
-  .product-total-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .product-total-value { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
-  .product-total-unit { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
-
-  /* PART SECTION */
-  .part-section { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: var(--r-lg); margin-bottom: 12px; overflow: hidden; }
-  .part-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; transition: background 0.12s; }
-  .part-header:hover { background: var(--bg-card-hover); }
-  .part-header .chevron { font-size: 10px; transition: transform 0.15s; display: inline-block; flex-shrink: 0; }
-  .part-header .chevron.open { transform: rotate(90deg); }
-  .part-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .part-view-btn { font-size: 10px; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--border-mid); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; gap: 3px; }
-  .part-view-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-  .part-qty { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); white-space: nowrap; }
-  .part-qty-val { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--accent); padding: 1px 4px; }
-  .part-time-badge { font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); white-space: nowrap; }
-  .part-analyze-btn { font-size: 11px; padding: 4px 12px; border-radius: var(--r-sm); border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
-  .part-analyze-btn:hover { background: var(--accent-dim); }
-  .part-analyze-btn.loading { opacity: 0.5; pointer-events: none; }
-  .part-body { border-top: 1px solid var(--border-faint); padding: 0; display: none; }
-  .part-body.open { display: block; }
-
-  /* PART ROUTE SUMMARY */
-  .part-route { border-bottom: 1px solid var(--border-faint); background: var(--bg-elevated); }
-  .part-route-header { display: flex; align-items: center; gap: 8px; padding: 9px 16px; cursor: pointer; user-select: none; font-size: 12px; }
-  .part-route-header:hover { background: var(--accent-dim); }
-  .part-route-badge { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); font-weight: 600; }
-  .part-route-ops { font-size: 11px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .part-route-body { padding: 10px 16px; border-top: 1px solid var(--border-faint); display: none; }
-  .part-route-body.open { display: block; }
-  .part-route-justif-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
-  .part-route-justif { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
-
-  /* PART OPERATIONS TABLE */
-  .part-ops-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-  .part-ops-table th { background: var(--bg-elevated); padding: 7px 10px; text-align: left; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-faint); }
-  .part-ops-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-faint); color: var(--text-secondary); vertical-align: top; }
-  .part-ops-table tr:last-child td { border-bottom: none; }
-  .part-ops-table .op-num { font-family: var(--font-mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
-  .part-ops-table .time-val { font-family: var(--font-mono); font-weight: 600; }
-  .part-ops-table .ai-val { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-radius: 3px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(107,142,191,0.2); white-space: nowrap; margin-bottom: 3px; }
-  .part-ops-table .conf-input { width: 70px; padding: 3px 6px; border: 1px solid var(--border-mid); border-radius: 4px; background: var(--bg-base); color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; text-align: right; }
-  .part-ops-table .conf-input:focus { border-color: var(--accent); outline: none; }
-
-  /* PART JUSTIFICATION ROW */
-  .part-justif { border-bottom: 1px solid var(--border-faint); }
-  .part-justif-toggle { cursor: pointer; padding: 0 4px; opacity: 0.4; transition: opacity 0.15s; }
-  .part-justif-toggle:hover { opacity: 1; }
-  .part-justif-block { display: flex; background: rgba(15,17,23,0.5); border-top: 1px solid var(--border-faint); }
-  :root.light .part-justif-block { background: rgba(230,235,245,0.6); }
-  .part-justif-stripe { width: 2px; background: var(--accent); opacity: 0.35; flex-shrink: 0; }
-  .part-justif-inner { padding: 8px 14px; flex: 1; }
-  .part-justif-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
-  .part-justif-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
-
-  /* ANALYZE ALL BUTTON */
-  .analyze-all-btn { padding: 8px 20px; border-radius: var(--r-md); border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-  .analyze-all-btn:hover { background: var(--accent); color: #fff; }
-  .analyze-all-btn.loading { opacity: 0.5; pointer-events: none; }
-
-  /* PART DRAWING ANALYSIS */
-  .part-drawing-btn { font-size: 10px; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; gap: 3px; }
-  .part-drawing-btn:hover { background: var(--gold-dim); }
-  .part-drawing-btn.loading { opacity: 0.5; pointer-events: none; }
-  .part-remarks { border-top: 1px solid var(--border-faint); }
-  .part-remarks-header { padding: 8px 16px; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-elevated); display: flex; align-items: center; gap: 6px; }
-  .part-remarks-header .remark-count { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--gold-dim); color: var(--gold); }
-  .part-remark { padding: 10px 16px; border-bottom: 1px solid var(--border-faint); }
-  .part-remark:last-child { border-bottom: none; }
-  .part-remark-badges { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
-  .part-remark-badge { font-family: var(--font-mono); font-size: 8px; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .part-remark-badge.zam { background: rgba(220,80,80,0.14); color: #CC6060; border: 1px solid rgba(220,80,80,0.3); }
-  .part-remark-badge.opt { background: rgba(80,140,220,0.13); color: #6090CC; border: 1px solid rgba(80,140,220,0.3); }
-  .part-remark-badge.high { background: rgba(220,80,80,0.1); color: #BB5050; }
-  .part-remark-badge.mid { background: var(--gold-dim); color: var(--gold); }
-  .part-remark-badge.low { background: var(--bg-elevated); color: var(--text-muted); }
-  .part-remark-title { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
-  .part-remark-desc { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
-  .part-remark-sug { font-size: 11px; color: var(--text-accent); margin-top: 5px; padding: 5px 9px; background: var(--accent-dim); border-radius: 4px; border-left: 2px solid var(--accent); line-height: 1.45; }
-  .part-summary { padding: 10px 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; background: var(--bg-elevated); border-bottom: 1px solid var(--border-faint); }
-
+  .remark-priority.mid { background: var(--amber-light); color: var(--amber); }
+  .remark-priority.low { background: var(--card2-bg); color: var(--text3); }
+  .remark-cat { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 2px 5px; border-radius: 3px; background: var(--card2-bg); color: var(--text3); }
+  .remark-title { font-size: 12px; font-weight: 600; color: var(--text); margin-top: 7px; line-height: 1.3; }
+  .remark-desc { font-size: 11.5px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+  .remark-suggestion { font-size: 11px; color: var(--teal); margin-top: 5px; padding: 5px 9px; background: var(--teal-light); border-radius: 4px; border-left: 2px solid var(--teal); line-height: 1.45; }
+  .drawing-empty { padding: 36px 24px; text-align: center; color: var(--text3); font-size: 12.5px; }
+  .remark-gost-badge { font-family:'JetBrains Mono',monospace; font-size:8px; padding:2px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.05em; background:rgba(220,80,80,0.14); color:#CC6060; border:1px solid rgba(220,80,80,0.3); }
 
   @media (max-width: 1100px) {
     .page-wrapper { grid-template-columns: 1fr; }
@@ -477,6 +366,190 @@
     .stats-row { grid-template-columns: 1fr 1fr; }
     .main-content { padding: 16px; }
   }
+
+  /* LOG PANEL */
+  .log-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 900; display: none; align-items: center; justify-content: center; }
+  .log-overlay.open { display: flex; }
+  .log-panel { background: var(--card-bg); border: 1px solid var(--border2); border-radius: var(--r-lg); width: 680px; max-width: 92vw; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.35); }
+  .log-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .log-title { font-family: 'Onest', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .log-title svg { width: 16px; height: 16px; color: var(--teal); }
+  .log-actions { display: flex; gap: 6px; }
+  .log-btn { padding: 5px 12px; border-radius: 7px; font-size: 11px; font-weight: 600; border: 1px solid var(--border2); background: var(--card2-bg); color: var(--text2); cursor: pointer; transition: all 0.13s; display: flex; align-items: center; gap: 5px; }
+  .log-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .log-btn.copied { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .log-btn-close { width: 28px; height: 28px; border-radius: 7px; background: var(--card2-bg); color: var(--text2); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.13s; }
+  .log-btn-close:hover { background: var(--red-light); color: var(--red); }
+  .log-body { flex: 1; overflow-y: auto; padding: 12px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.65; color: var(--text2); }
+  .log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: var(--text3); white-space: nowrap; flex-shrink: 0; }
+  .log-msg { word-break: break-word; }
+  .log-msg.info { color: var(--text2); }
+  .log-msg.ok { color: var(--green); }
+  .log-msg.warn { color: var(--amber); }
+  .log-msg.err { color: var(--red); }
+  .log-msg.step { color: var(--teal); font-weight: 600; }
+  .log-empty { color: var(--text3); text-align: center; padding: 32px; font-family: 'Onest', sans-serif; font-size: 12px; }
+  .log-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 1px 5px; border-radius: 4px; background: var(--teal-light); color: var(--teal); font-weight: 600; margin-left: 4px; }
+  .log-tokens { font-family: 'JetBrains Mono', monospace; font-size: 10px; display: inline-flex; gap: 8px; margin-left: 6px; }
+  .log-tok-in { color: var(--green); font-weight: 600; }
+  .log-tok-out { color: var(--red); font-weight: 600; }
+  .log-tok-total { color: var(--text2); }
+  .log-metrics-bar { padding: 8px 0; margin: 4px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .log-metric-item { display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+  .log-metric-label { color: var(--text3); }
+  .log-metric-val { font-weight: 700; }
+
+  /* PRODUCTS PANEL */
+  .products-panel { display: none; }
+  .products-panel.visible { display: block; }
+  .products-header { margin-bottom: 20px; }
+  .products-title { font-family: 'Onest', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin: 4px 0 0; }
+
+  /* SIDEBAR TREE */
+  .sidebar-tree-toggle { display: flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: var(--r-sm); transition: background 0.12s, color 0.12s; user-select: none; }
+  .sidebar-tree-toggle:hover { background: var(--card2-bg); color: var(--text); }
+  .sidebar-tree-toggle .chevron { font-size: 9px; transition: transform 0.15s; display: inline-block; width: 12px; text-align: center; flex-shrink: 0; }
+  .sidebar-tree-toggle .chevron.open { transform: rotate(90deg); }
+  .sidebar-tree-toggle .tree-count { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); margin-left: auto; }
+  .sidebar-tree-children { display: none; }
+  .sidebar-tree-children.open { display: block; }
+  .sidebar-sub-item { display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 32px; font-size: 11.5px; color: var(--text2); cursor: pointer; border-radius: var(--r-sm); transition: background 0.12s, color 0.12s; }
+  .sidebar-sub-item:hover { background: var(--card2-bg); color: var(--text); }
+  .sidebar-sub-item.active { background: var(--teal-light); color: var(--teal); }
+  .sidebar-sub-item.empty { color: var(--text3); font-style: italic; }
+
+  /* FILE GRID */
+  .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 16px; }
+  .file-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .file-card:hover { border-color: var(--teal); box-shadow: 0 2px 12px rgba(0,194,184,0.12); }
+  .file-card-thumb { height: 200px; background: var(--card2-bg); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .file-card-thumb canvas { max-width: 100%; max-height: 100%; display: block; }
+  .file-card-name { padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text2); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
+  .file-folder-section { margin-bottom: 20px; }
+  .file-folder-header { display: flex; align-items: center; gap: 6px; padding: 8px 0; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; user-select: none; }
+  .file-folder-header .chevron { font-size: 10px; transition: transform 0.15s; display: inline-block; }
+  .file-folder-header .chevron.open { transform: rotate(90deg); }
+  .products-empty { text-align: center; padding: 48px 24px; color: var(--text3); font-size: 13px; }
+
+  /* PRODUCT TOTALS */
+  .product-totals { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .product-total-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 18px; min-width: 140px; }
+  .product-total-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .product-total-value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text); margin-top: 2px; }
+  .product-total-unit { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); }
+
+  /* PART SECTION */
+  .part-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 12px; overflow: hidden; }
+  .part-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; transition: background 0.12s; }
+  .part-header:hover { background: var(--card2-bg); }
+  .part-header .chevron { font-size: 10px; transition: transform 0.15s; display: inline-block; flex-shrink: 0; }
+  .part-header .chevron.open { transform: rotate(90deg); }
+  .part-name { font-size: 12.5px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .part-view-btn { font-size: 10px; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--border2); background: transparent; color: var(--text3); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; gap: 3px; }
+  .part-view-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-light); }
+  .part-qty { display: inline-flex; align-items: center; gap: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); white-space: nowrap; }
+  .part-qty-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--teal); padding: 1px 4px; }
+  .part-time-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--teal-light); color: var(--teal); border: 1px solid rgba(0,194,184,0.2); white-space: nowrap; }
+  .part-analyze-btn { font-size: 11px; padding: 4px 12px; border-radius: var(--r-sm); border: 1px solid var(--teal); background: transparent; color: var(--teal); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .part-analyze-btn:hover { background: var(--teal-light); }
+  .part-analyze-btn.loading { opacity: 0.5; pointer-events: none; }
+  .part-body { border-top: 1px solid var(--border); padding: 0; display: none; }
+  .part-body.open { display: block; }
+
+  /* PART ROUTE SUMMARY */
+  .part-route { border-bottom: 1px solid var(--border); background: var(--card2-bg); }
+  .part-route-header { display: flex; align-items: center; gap: 8px; padding: 9px 16px; cursor: pointer; user-select: none; font-size: 12px; }
+  .part-route-header:hover { background: var(--teal-light); }
+  .part-route-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 3px; background: var(--teal-light); color: var(--teal); border: 1px solid rgba(0,194,184,0.2); font-weight: 600; }
+  .part-route-ops { font-size: 11px; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .part-route-body { padding: 10px 16px; border-top: 1px solid var(--border); display: none; }
+  .part-route-body.open { display: block; }
+  .part-route-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+  .part-route-justif { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .part-route-low-conf { margin-top: 12px; display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(230,100,60,0.07); border: 1px solid rgba(230,100,60,0.2); border-radius: 5px; font-size: 11px; color: #e06040; }
+  .part-route-low-conf-icon { font-size: 13px; flex-shrink: 0; }
+  .part-route-suggestion { margin-top: 8px; padding: 10px 14px; background: rgba(230,180,60,0.07); border: 1px solid rgba(230,180,60,0.25); border-radius: 6px; }
+  .part-route-suggestion-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .part-route-suggestion-ops { font-size: 12px; color: var(--text); font-weight: 500; line-height: 1.6; word-break: break-word; }
+  .part-route-suggestion-ops span { display: inline-block; background: rgba(230,180,60,0.12); border: 1px solid rgba(230,180,60,0.3); border-radius: 3px; padding: 1px 6px; margin: 2px 3px 2px 0; font-size: 11px; }
+  .part-route-suggestion-hint { font-size: 10px; color: var(--text3); margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(230,180,60,0.2); }
+  .reasoning-route-line { display: flex; align-items: baseline; gap: 6px; padding: 5px 8px; margin-bottom: 4px; background: var(--card2-bg); border-left: 3px solid var(--teal); border-radius: 0 4px 4px 0; }
+  .reasoning-route-id { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px; color: var(--teal); flex-shrink: 0; }
+  .reasoning-route-score { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); flex-shrink: 0; }
+  .reasoning-route-text { font-size: 12px; color: var(--text); }
+  .reasoning-verdict { margin-top: 8px; padding: 6px 10px; background: rgba(0,194,184,0.07); border-radius: 5px; font-size: 12px; color: var(--text); line-height: 1.5; }
+  .reasoning-verdict strong { color: var(--teal); }
+  .reasoning-line { font-size: 12px; color: var(--text2); margin-bottom: 2px; }
+
+  /* PART OPERATIONS TABLE */
+  .part-ops-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .part-ops-table th { background: var(--card2-bg); padding: 7px 10px; text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  .part-ops-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+  .part-ops-table tr:last-child td { border-bottom: none; }
+  .part-ops-table .op-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--teal); white-space: nowrap; }
+  .part-ops-table .time-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .part-ops-table .ai-val { display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 5px; border-radius: 3px; background: var(--teal-light); color: var(--teal); border: 1px solid rgba(0,194,184,0.2); white-space: nowrap; margin-bottom: 3px; }
+  .part-ops-table .conf-input { width: 70px; padding: 3px 6px; border: 1px solid var(--border2); border-radius: 4px; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; }
+  .part-ops-table .conf-input:focus { border-color: var(--teal); outline: none; }
+
+  /* PART JUSTIFICATION ROW */
+  .part-justif { border-bottom: 1px solid var(--border); }
+  .part-justif-toggle { cursor: pointer; padding: 0 4px; opacity: 0.4; transition: opacity 0.15s; }
+  .part-justif-toggle:hover { opacity: 1; }
+  .part-justif-block { display: flex; background: rgba(13,18,25,0.5); border-top: 1px solid var(--border); }
+  :root.light .part-justif-block { background: rgba(247,248,251,0.6); }
+  .part-justif-stripe { width: 2px; background: var(--teal); opacity: 0.35; flex-shrink: 0; }
+  .part-justif-inner { padding: 8px 14px; flex: 1; }
+  .part-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+  .part-justif-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+  /* ANALYZE ALL BUTTON */
+  .analyze-all-btn { padding: 8px 20px; border-radius: var(--r-md); border: 1px solid var(--teal); background: var(--teal-light); color: var(--teal); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .analyze-all-btn:hover { background: var(--teal); color: #fff; }
+  .analyze-all-btn.loading { opacity: 0.5; pointer-events: none; }
+
+  /* PART DRAWING ANALYSIS */
+  .part-drawing-btn { font-size: 10px; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--amber); background: transparent; color: var(--amber); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: inline-flex; align-items: center; gap: 3px; }
+  .part-drawing-btn:hover { background: var(--amber-light); }
+  .part-drawing-btn.loading { opacity: 0.5; pointer-events: none; }
+  .part-remarks { border-top: 1px solid var(--border); }
+  .part-remarks-header { padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; background: var(--card2-bg); display: flex; align-items: center; gap: 6px; }
+  .part-remarks-header .remark-count { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--amber-light); color: var(--amber); }
+  .part-remark { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .part-remark:last-child { border-bottom: none; }
+  .part-remark-badges { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; }
+  .part-remark-badge { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .part-remark-badge.zam { background: rgba(220,80,80,0.14); color: #CC6060; border: 1px solid rgba(220,80,80,0.3); }
+  .part-remark-badge.opt { background: rgba(80,140,220,0.13); color: #6090CC; border: 1px solid rgba(80,140,220,0.3); }
+  .part-remark-badge.high { background: rgba(220,80,80,0.1); color: #BB5050; }
+  .part-remark-badge.mid { background: var(--amber-light); color: var(--amber); }
+  .part-remark-badge.low { background: var(--card2-bg); color: var(--text3); }
+  .part-remark-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .part-remark-desc { font-size: 11.5px; color: var(--text2); line-height: 1.5; }
+  .part-remark-sug { font-size: 11px; color: var(--teal); margin-top: 5px; padding: 5px 9px; background: var(--teal-light); border-radius: 4px; border-left: 2px solid var(--teal); line-height: 1.45; }
+  .part-summary { padding: 10px 16px; font-size: 12px; color: var(--text2); line-height: 1.5; background: var(--card2-bg); border-bottom: 1px solid var(--border); }
+
+  /* PDF VIEWER MODAL */
+  .pdf-modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); }
+  .pdf-modal-overlay.visible { display:flex; align-items:center; justify-content:center; }
+  .pdf-modal { position:relative; width:92vw; height:92vh; background:var(--card-bg); border-radius:var(--r-lg); border:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.5); }
+  .pdf-modal-header { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--card2-bg); }
+  .pdf-modal-title { font-family:'Onest',sans-serif; font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pdf-modal-controls { display:flex; align-items:center; gap:6px; }
+  .pdf-modal-controls button { width:30px; height:30px; border-radius:var(--r-sm); border:1px solid var(--border); background:var(--card-bg); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all 0.15s; }
+  .pdf-modal-controls button:hover { background:var(--teal-light); color:var(--teal); border-color:var(--teal); }
+  .pdf-modal-zoom-label { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text3); min-width:42px; text-align:center; }
+  .pdf-modal-close { width:30px; height:30px; border-radius:var(--r-sm); border:1px solid var(--border); background:var(--card-bg); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:all 0.15s; margin-left:12px; }
+  .pdf-modal-close:hover { background:rgba(220,80,80,0.15); color:#CC6060; border-color:rgba(220,80,80,0.4); }
+  .pdf-modal-viewport { flex:1; overflow:hidden; position:relative; background:#1a1a1a; cursor:grab; }
+  :root.light .pdf-modal-viewport { background:#e0e0e0; }
+  .pdf-modal-viewport.grabbing { cursor:grabbing; }
+  .pdf-modal-canvas-wrap { position:absolute; transform-origin:0 0; }
+  .pdf-modal-canvas-wrap canvas { display:block; }
+  .pdf-modal-pages { display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px; }
+  .pdf-modal-loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:13px; gap:8px; }
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -510,7 +583,7 @@
     <span class="nav-pill" onclick="navTo('history',this)">История</span>
     <div class="theme-toggle" onclick="toggleTheme()">
       <div class="theme-toggle-track"><div class="theme-toggle-thumb"></div></div>
-      <span class="theme-toggle-label" id="themeLabel">тёмная</span>
+      <span class="theme-toggle-label" id="themeLabel">светлая</span>
     </div>
     <div class="user-avatar">ТЛ</div>
   </div>
@@ -531,32 +604,23 @@
       <svg viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M2 7h7M2 10.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       История расчётов
     </div>
+    <div class="sidebar-item" onclick="openLogPanel()">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M2 2h10v10H2z" stroke="currentColor" stroke-width="1.1" rx="1.5"/><path d="M4 5h3M4 7.5h5M4 10h4" stroke="currentColor" stroke-width="0.9" stroke-linecap="round" opacity="0.6"/></svg>
+      Логи <span class="log-badge" id="log-count">0</span>
+    </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section-label">Изделия</div>
-    <div id="sidebar-products-tree"><div style="padding:4px 10px;font-size:11px;color:var(--text-muted)">Загрузка...</div></div>
+    <div id="sidebar-products-tree"><div style="padding:4px 10px;font-size:11px;color:var(--text3)">Загрузка...</div></div>
     <div class="sidebar-divider"></div>
-    <div class="sidebar-section-label">Текущий сеанс</div>
-    <div class="sidebar-meta">
-      <div class="sidebar-meta-label">Маршрутная карта</div>
-      <div class="sidebar-meta-val" id="sb-marshrutnaya" style="color:var(--text-muted)">не загружена</div>
-    </div>
-    <div class="sidebar-meta">
-      <div class="sidebar-meta-label">Чертёж</div>
-      <div class="sidebar-meta-val" id="sb-chertezh" style="color:var(--text-muted)">не загружен</div>
-    </div>
-    <div class="sidebar-meta">
-      <div class="sidebar-meta-label">Изделие</div>
-      <div class="sidebar-meta-val" id="sb-product" style="color:var(--text-muted)">—</div>
-    </div>
   </aside>
 
   <main class="main-content">
     <div class="page-header">
       <div>
         <div class="breadcrumb">
-          <span>Главная</span><span style="color:var(--text-muted)">›</span>
-          <span>Нормирование</span><span style="color:var(--text-muted)">›</span>
-          <span style="color:var(--text-primary)">Новый расчёт</span>
+          <span>Главная</span><span style="color:var(--text3)">›</span>
+          <span>Нормирование</span><span style="color:var(--text3)">›</span>
+          <span style="color:var(--text)">Новый расчёт</span>
         </div>
         <h1 class="page-title">Расчёт норм времени</h1>
         <p class="page-desc">Загрузите документы и получите нормативы по операциям</p>
@@ -611,9 +675,9 @@
             <div class="upload-zone" id="drop-chertezh"
                  ondragover="onDragOver(event,'drop-chertezh')"
                  ondragleave="onDragLeave('drop-chertezh')"
-                 ondrop="onDrop(event,'chertezh-input','drop-chertezh','chertezh-name','sb-chertezh')">
+                 ondrop="onDrop(event,'chertezh-input','drop-chertezh','chertezh-name')">
               <input type="file" id="chertezh-input" accept=".pdf"
-                     onchange="onFileChange('chertezh-input','drop-chertezh','chertezh-name','sb-chertezh')">
+                     onchange="onFileChange('chertezh-input','drop-chertezh','chertezh-name')">
               <div class="upload-icon">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M9 2H5a1 1 0 00-1 1v10a1 1 0 001 1h6a1 1 0 001-1V6L9 2z" stroke="#8AAAD4" stroke-width="1.1" stroke-linejoin="round"/>
@@ -625,22 +689,7 @@
               <div class="upload-filename" id="chertezh-name"></div>
               <span class="badge-req">обязательно</span>
             </div>
-            <div class="upload-zone" id="drop-marshrutnaya"
-                 ondragover="onDragOver(event,'drop-marshrutnaya')"
-                 ondragleave="onDragLeave('drop-marshrutnaya')"
-                 ondrop="onDrop(event,'marshrutnaya-input','drop-marshrutnaya','marshrutnaya-name','sb-marshrutnaya')">
-              <input type="file" id="marshrutnaya-input" accept=".pdf"
-                     onchange="onFileChange('marshrutnaya-input','drop-marshrutnaya','marshrutnaya-name','sb-marshrutnaya')">
-              <div class="upload-icon">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8l2.5 2.5L8 7M8 3.5h5M8 7h4.5M8 10.5h4" stroke="#8AAAD4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="upload-type">Маршрутная карта</div>
-              <div class="upload-hint">PDF · необязательно</div>
-              <div class="upload-filename" id="marshrutnaya-name"></div>
-              <span class="badge-opt">опционально</span>
-            </div>
+
           </div>
           <div class="status-bar" id="status"><div class="status-dot-s"></div><span id="status-text"></span></div>
           <div class="btn-row">
@@ -656,7 +705,7 @@
       <!-- Параметры расчёта -->
       <div class="panel">
         <div class="panel-header">
-          <div class="panel-title"><div class="panel-dot" style="background:var(--gold)"></div>Параметры расчёта</div>
+          <div class="panel-title"><div class="panel-dot" style="background:var(--amber)"></div>Параметры расчёта</div>
         </div>
         <div class="panel-body">
           <div class="field-group">
@@ -717,9 +766,21 @@
       </div>
       <div class="table-wrap">
         <table id="results-table">
+          <colgroup>
+            <col style="width:24px">
+            <col style="width:40px">
+            <col style="width:150px">
+            <col style="width:200px">
+            <col style="width:230px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:230px">
+          </colgroup>
           <thead>
             <tr>
-              <th style="width:32px"></th>
+              <th></th>
               <th>#</th>
               <th>Деталь</th>
               <th>Операция</th>
@@ -760,6 +821,18 @@
       </div>
       <div class="table-wrap">
         <table id="session-table">
+          <colgroup>
+            <col style="width:40px">
+            <col style="width:150px">
+            <col style="width:200px">
+            <col style="width:230px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:230px">
+            <col style="width:200px">
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>
@@ -791,6 +864,19 @@
       <div class="history-body">
         <div class="table-wrap">
           <table id="history-table">
+            <colgroup>
+              <col style="width:40px">
+              <col style="width:90px">
+              <col style="width:150px">
+              <col style="width:200px">
+              <col style="width:230px">
+              <col style="width:80px">
+              <col style="width:80px">
+              <col style="width:80px">
+              <col style="width:80px">
+              <col style="width:230px">
+              <col style="width:200px">
+            </colgroup>
             <thead>
               <tr>
                 <th>#</th>
@@ -818,8 +904,8 @@
     <div class="drawing-panel" id="drawing-panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div>
-          <h2 style="font-family:var(--font-ui);font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:-0.02em;">Анализ чертежа</h2>
-          <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">Загрузите PDF чертежа — ИИ выявит замечания и предложения по оптимизации</p>
+          <h2 style="font-family:'Onest', sans-serif;font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.02em;">Анализ чертежа</h2>
+          <p style="font-size:12px;color:var(--text3);margin-top:2px;">Загрузите PDF чертежа — ИИ выявит замечания и предложения по оптимизации</p>
         </div>
       </div>
 
@@ -845,10 +931,10 @@
             <div class="drawing-overlay" id="drawing-overlay"></div>
           </div>
           <!-- Информация об источнике чертежа -->
-          <div style="padding:10px 16px;border-top:1px solid var(--border-faint);display:flex;align-items:center;gap:8px;">
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;opacity:0.5"><path d="M6 1v1.5M6 9.5V11M1 6h1.5M9.5 6H11M2.6 2.6l1.1 1.1M8.3 8.3l1.1 1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);">Чертёж из вкладки «Нормирование»:</span>
-            <span style="font-family:var(--font-mono);font-size:10.5px;color:var(--text-accent);" id="drawing-source-name">не загружен</span>
+            <span style="font-family:'JetBrains Mono', monospace;font-size:10px;color:var(--text3);">Чертёж из вкладки «Нормирование»:</span>
+            <span style="font-family:'JetBrains Mono', monospace;font-size:10.5px;color:var(--teal);" id="drawing-source-name">не загружен</span>
           </div>
         </div>
 
@@ -898,9 +984,9 @@
           <div class="product-total-value" id="total-tpz">—</div>
           <div class="product-total-unit">минут</div>
         </div>
-        <div class="product-total-card" style="border-color:var(--accent);border-width:1.5px">
+        <div class="product-total-card" style="border-color:var(--teal);border-width:1.5px">
           <div class="product-total-label">Общее время</div>
-          <div class="product-total-value" id="total-sum" style="color:var(--accent)">—</div>
+          <div class="product-total-value" id="total-sum" style="color:var(--teal)">—</div>
           <div class="product-total-unit">шт + пз (мин)</div>
         </div>
         <div class="product-total-card">
@@ -986,9 +1072,7 @@
 
   // --- Sidebar ---
   function updateSidebarProduct() {
-    const val = document.getElementById('product-name').value.trim();
-    document.getElementById('sb-product').textContent = val || '—';
-    document.getElementById('sb-product').style.color = val ? 'var(--text-accent)' : 'var(--text-muted)';
+    // sidebar product display removed
   }
 
   // --- File drop/input helpers ---
@@ -998,12 +1082,10 @@
     const nameEl = document.getElementById(nameId);
     if (input.files.length > 0) {
       const name = input.files[0].name;
+      const sizeKb = (input.files[0].size / 1024).toFixed(0);
       nameEl.textContent = name;
       drop.classList.add('filled');
-      if (sbId) {
-        document.getElementById(sbId).textContent = name;
-        document.getElementById(sbId).style.color = 'var(--text-accent)';
-      }
+      addLog('Загружен файл: ' + name + ' (' + sizeKb + ' КБ)', 'ok');
     }
     checkFilesReady();
   }
@@ -1057,37 +1139,90 @@
   // --- Analyze ---
   async function analyze() {
     const chertezh = document.getElementById('chertezh-input').files[0];
-    const marshrutnaya = document.getElementById('marshrutnaya-input').files[0];
 
     currentBatchSize = parseInt(document.getElementById('batch-size-input').value) || 1;
     if (currentBatchSize < 1) currentBatchSize = 1;
 
     const form = new FormData();
     form.append('chertezh', chertezh);
-    if (marshrutnaya) form.append('marshrutnaya', marshrutnaya);
     form.append('batch_size', currentBatchSize);
 
     document.getElementById('btn-analyze').disabled = true;
-    setStatus('info', '<span class="loader"></span>&nbsp;Отправляю файлы в Anthropic API, подождите...');
+    setStatus('info', '<span class="loader"></span>&nbsp;Запуск конвейера нормирования...');
     updateSteps(2);
 
+    addLog('Запуск анализа: чертёж=' + chertezh.name + ', партия=' + currentBatchSize, 'step');
+
     try {
+      const t0 = performance.now();
       const resp = await fetch('/api/analyze', { method: 'POST', body: form });
       const data = await resp.json();
+      const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
       if (!resp.ok || data.error) {
+        addLog('Ошибка API: ' + (data.error || 'Неизвестная ошибка'), 'err');
         setStatus('error', '⚠ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
         document.getElementById('btn-analyze').disabled = false;
         updateSteps(1);
         return;
       }
 
+      addLog('Ответ получен за ' + elapsed + ' сек, операций: ' + (data.operations || []).length, 'ok');
+
       currentOperations = data.operations.map(op => ({ ...op }));
       renderRouteSummary(data['маршрут'] || null);
       renderResults(currentOperations, currentBatchSize);
-      setStatus('success', '✓ Расчёт выполнен. Проверьте значения и добавьте к изделию.');
+
+      // Показать предупреждения конвейера если есть
+      const warnings = data['предупреждения'] || [];
+      const ruleWarnings = warnings.filter(w => w.startsWith('[ПРАВИЛО]'));
+      const otherWarnings = warnings.filter(w => !w.startsWith('[ПРАВИЛО]'));
+
+      // Отдельная яркая плашка для нарушений бизнес-правил
+      const rulesBanner = document.getElementById('rules-violations-banner');
+      if (rulesBanner) rulesBanner.remove();
+      if (ruleWarnings.length > 0) {
+        ruleWarnings.forEach(w => addLog('⚠ ' + w, 'warn'));
+        const banner = document.createElement('div');
+        banner.id = 'rules-violations-banner';
+        banner.style.cssText = 'margin:12px 0;padding:12px 16px;background:#3d1a1a;border:2px solid #e05252;border-radius:8px;color:#f08080;font-size:0.92em;';
+        const items = ruleWarnings.map(w => '<div style="margin:3px 0;padding-left:8px;border-left:3px solid #e05252">• ' + w.replace('[ПРАВИЛО] ', '') + '</div>').join('');
+        banner.innerHTML = '<div style="font-weight:700;font-size:1em;margin-bottom:6px;color:#e05252">⛔ Нарушения бизнес-правил (' + ruleWarnings.length + ')</div>' + items + '<div style="margin-top:8px;font-size:0.82em;color:#9a7070">Случаи записаны в rules/business_rules.md для еженедельного пересмотра</div>';
+        const resultsEl = document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentElement('beforebegin', banner);
+      }
+
+      if (warnings.length > 0) {
+        warnings.forEach(w => { if (!w.startsWith('[ПРАВИЛО]')) addLog(w, 'warn'); });
+        const warnHtml = otherWarnings.map(w => '<div style="margin:2px 0">• ' + w + '</div>').join('');
+        const statusText = ruleWarnings.length > 0
+          ? '✓ Расчёт выполнен. <span style="color:#e05252">⛔ ' + ruleWarnings.length + ' нарушения правил</span>'
+          : '✓ Расчёт выполнен.';
+        if (otherWarnings.length > 0) {
+          setStatus('success', statusText + '<details style="margin-top:6px;cursor:pointer"><summary style="color:var(--amber)">⚠ Предупреждения (' + otherWarnings.length + ')</summary><div style="margin-top:4px;font-size:0.85em;color:#b0b0b0">' + warnHtml + '</div></details>');
+        } else {
+          setStatus('success', statusText);
+        }
+      } else {
+        setStatus('success', '✓ Расчёт выполнен. Проверьте значения и добавьте к изделию.');
+      }
+
+      // Логируем маршрут
+      const m = data['маршрут'];
+      if (m && m.номер) addLog('Маршрут: ' + m.номер + ' (' + (m.источник || '—') + '), уверенность: ' + (m.уверенность || '—') + '%', 'info');
+
+      // Логируем операции
+      currentOperations.forEach(op => {
+        addLog(op['операция'] + ': t_шт=' + op['t_шт_предложено'] + ', t_пз=' + op['t_пз_предложено'] + ', ' + (op['оборудование'] || '—'), 'info');
+      });
+
+      // Логируем метрики токенов
+      const metrics = data['метрики'];
+      if (metrics) renderMetricsLog(metrics);
+
       updateSteps(3);
     } catch (e) {
+      addLog('Ошибка сети: ' + e.message, 'err');
       setStatus('error', '⚠ Ошибка сети: ' + e.message);
       document.getElementById('btn-analyze').disabled = false;
       updateSteps(1);
@@ -1100,14 +1235,14 @@
     if (!маршрут || !маршрут.обоснование) { block.style.display = 'none'; return; }
     block.style.display = 'block';
     const conf = маршрут.уверенность || 0;
-    const color = conf >= 80 ? 'var(--accent)' : conf >= 60 ? 'var(--gold)' : '#e07070';
-    document.getElementById('route-num').textContent = маршрут.источник === 'маршрутная карта' ? 'МК' : (маршрут.номер || '—');
+    const color = conf >= 80 ? 'var(--teal)' : conf >= 60 ? 'var(--amber)' : '#e07070';
+    document.getElementById('route-num').textContent = маршрут.номер || '—';
     document.getElementById('route-ops').textContent = маршрут.операции || '';
     document.getElementById('route-conf-fill').style.width = conf + '%';
     document.getElementById('route-conf-fill').style.background = color;
     document.getElementById('route-conf-val').textContent = conf + '%';
     document.getElementById('route-conf-val').style.color = color;
-    document.getElementById('route-justif').textContent = маршрут.обоснование || '—';
+    document.getElementById('route-justif').innerHTML = formatReasoning(маршрут.обоснование || '—');
     document.getElementById('route-conf-note').textContent = маршрут.уверенность_пояснение || '';
   }
 
@@ -1210,14 +1345,14 @@
 
     tfoot.innerHTML = `
       <tr class="session-tfoot-row">
-        <td colspan="5" style="text-align:right;padding-right:14px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);">
+        <td colspan="5" style="text-align:right;padding-right:14px;font-family:'JetBrains Mono', monospace;font-size:10px;color:var(--text3);">
           ИТОГО (партия ${batchSize} дет.)
         </td>
         <td class="num"><span class="num-val">${fmt(sumTsht)}</span></td>
         <td class="num"><span class="num-val">${fmt(sumTsht)}</span></td>
         <td class="num"><span class="num-val">${fmt(sumTpzPerPart)}</span></td>
         <td class="num"><span class="num-val">${fmt(sumTpzPerPart)}</span></td>
-        <td style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);">
+        <td style="font-size:10px;font-family:'JetBrains Mono', monospace;color:var(--text3);">
           <span class="total-chip">1 дет: ${fmt(totalPerPart)} мин</span>
           &nbsp;партия: ${fmt(totalPerBatch)} мин
         </td>
@@ -1301,15 +1436,8 @@
 
   function clearUploadZone() {
     document.getElementById('chertezh-input').value = '';
-    document.getElementById('marshrutnaya-input').value = '';
     document.getElementById('chertezh-name').textContent = '';
-    document.getElementById('marshrutnaya-name').textContent = '';
     document.getElementById('drop-chertezh').classList.remove('filled');
-    document.getElementById('drop-marshrutnaya').classList.remove('filled');
-    document.getElementById('sb-marshrutnaya').textContent = 'не загружена';
-    document.getElementById('sb-marshrutnaya').style.color = 'var(--text-muted)';
-    document.getElementById('sb-chertezh').textContent = 'не загружен';
-    document.getElementById('sb-chertezh').style.color = 'var(--text-muted)';
   }
 
   function renderSession() {
@@ -1364,14 +1492,14 @@
     const tfoot = document.getElementById('session-tfoot');
     tfoot.innerHTML = `
       <tr class="session-tfoot-row">
-        <td colspan="4" style="text-align:right;padding-right:14px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);">
+        <td colspan="4" style="text-align:right;padding-right:14px;font-family:'JetBrains Mono', monospace;font-size:10px;color:var(--text3);">
           ИТОГО ПО ИЗДЕЛИЮ (${sessionParts.length} дет.)
         </td>
         <td class="num"><span class="num-val">${fmt(grandTshtSum)}</span></td>
         <td class="num"><span class="num-val">${fmt(grandTshtSum)}</span></td>
         <td class="num"><span class="num-val">${fmt(grandTpzPerPart)}</span></td>
         <td class="num"><span class="num-val">${fmt(grandTpzPerPart)}</span></td>
-        <td colspan="2" style="font-family:var(--font-mono);font-size:10px;">
+        <td colspan="2" style="font-family:'JetBrains Mono', monospace;font-size:10px;">
           <span class="total-chip">Изделие: ${fmt(grandTotal)} мин (${fmt(grandTotal/60)} ч)</span>
         </td>
       </tr>
@@ -1387,6 +1515,7 @@
     const allOps = sessionParts.flatMap(p => p.ops);
 
     setStatus('info', '<span class="loader"></span>&nbsp;Сохраняю в базу данных...');
+    addLog('Сохранение: изделие="' + productName + '", операций: ' + allOps.length, 'step');
 
     try {
       const resp = await fetch('/api/confirm', {
@@ -1397,14 +1526,17 @@
       const data = await resp.json();
 
       if (!resp.ok || data.error) {
+        addLog('Ошибка сохранения: ' + (data.error || '?'), 'err');
         setStatus('error', '⚠ Ошибка сохранения: ' + (data.error || 'Неизвестная ошибка'));
         document.getElementById('btn-save-session').disabled = false;
         return;
       }
 
+      addLog('Сохранено ' + data.saved + ' операций, IDs: ' + (data.ids || []).join(', '), 'ok');
       setStatus('success', `✓ Сохранено ${data.saved} операций по изделию «${productName}».`);
       expandAndRefreshHistory();
     } catch (e) {
+      addLog('Ошибка сети при сохранении: ' + e.message, 'err');
       setStatus('error', '⚠ Ошибка сети: ' + e.message);
       document.getElementById('btn-save-session').disabled = false;
     }
@@ -1485,6 +1617,23 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function formatReasoning(s) {
+    if (!s || s === '—') return '<span style="color:var(--text3)">—</span>';
+    const lines = s.split('\n');
+    // Ищем строку с **Вывод: ...** — показываем только её
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (line.includes('**')) {
+        const formatted = esc(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return `<div class="reasoning-verdict">${formatted}</div>`;
+      }
+    }
+    // Если вывода нет — показываем последнюю непустую строку
+    const nonEmpty = lines.map(l => l.trim()).filter(Boolean);
+    if (!nonEmpty.length) return '<span style="color:var(--text3)">—</span>';
+    return `<div class="reasoning-verdict">${esc(nonEmpty[nonEmpty.length - 1])}</div>`;
   }
 
   // --- Reset ---
@@ -1603,12 +1752,12 @@
     const btn = document.getElementById('btn-analyze-drawing');
     if (file) {
       sourceNameEl.textContent = file.name;
-      sourceNameEl.style.color = 'var(--text-accent)';
+      sourceNameEl.style.color = 'var(--teal)';
       btn.disabled = false;
       renderPdfToCanvas(file);
     } else {
       sourceNameEl.textContent = 'не загружен — вернитесь в «Нормирование» и загрузите чертёж';
-      sourceNameEl.style.color = 'var(--text-muted)';
+      sourceNameEl.style.color = 'var(--text3)';
       btn.disabled = true;
     }
   }
@@ -1626,7 +1775,7 @@
           <rect x="3" y="3" width="26" height="26" rx="3" stroke="currentColor" stroke-width="1.5"/>
           <path d="M9 11h14M9 16h10M9 21h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
         </svg>
-        <div style="color:var(--text-accent);font-family:var(--font-mono);font-size:11px;margin-bottom:4px;">${esc(file.name)}</div>
+        <div style="color:var(--teal);font-family:'JetBrains Mono', monospace;font-size:11px;margin-bottom:4px;">${esc(file.name)}</div>
         <div style="font-size:11px;">Предпросмотр недоступен — чертёж передаётся на анализ</div>`;
       return;
     }
@@ -1660,8 +1809,8 @@
           <rect x="3" y="3" width="26" height="26" rx="3" stroke="currentColor" stroke-width="1.5"/>
           <path d="M9 11h14M9 16h10M9 21h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
         </svg>
-        <div style="color:var(--text-accent);font-family:var(--font-mono);font-size:11px;margin-bottom:4px;">${esc(file.name)}</div>
-        <div style="font-size:11px;color:var(--text-muted);">Предпросмотр недоступен — чертёж передаётся на анализ</div>`;
+        <div style="color:var(--teal);font-family:'JetBrains Mono', monospace;font-size:11px;margin-bottom:4px;">${esc(file.name)}</div>
+        <div style="font-size:11px;color:var(--text3);">Предпросмотр недоступен — чертёж передаётся на анализ</div>`;
       console.warn('PDF.js render error:', e.message);
     }
   }
@@ -1676,16 +1825,20 @@
     btn.disabled = true;
     statusEl.style.display = 'block';
     statusEl.innerHTML = '<span class="loader"></span> Анализирую чертёж, подождите...';
-    statusEl.style.color = 'var(--text-accent)';
+    statusEl.style.color = 'var(--teal)';
 
     const form = new FormData();
     form.append('chertezh', currentDrawingFile);
+    addLog('Запуск анализа чертежа: ' + currentDrawingFile.name, 'step');
 
     try {
+      const t0 = performance.now();
       const resp = await fetch('/api/analyze_drawing', { method: 'POST', body: form });
       const data = await resp.json();
+      const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
       if (!resp.ok || data.error) {
+        addLog('Ошибка анализа чертежа: ' + (data.error || '?'), 'err');
         statusEl.innerHTML = '⚠ Ошибка: ' + (data.error || 'Неизвестная ошибка');
         statusEl.style.color = '#C07070';
         btn.disabled = false;
@@ -1700,10 +1853,14 @@
       renderRemarksList();
       renderHighlights();
 
+      addLog('Анализ чертежа за ' + elapsed + ' сек: ' + drawingRemarks.length + ' замечаний', 'ok');
+      drawingRemarks.forEach(r => addLog('  [' + r.type + '] ' + (r.title || ''), r.type === 'замечание' ? 'warn' : 'info'));
+
       statusEl.innerHTML = `✓ Найдено ${drawingRemarks.length} замечаний и оптимизаций`;
       statusEl.style.color = '#7AB890';
 
     } catch (e) {
+      addLog('Ошибка сети (анализ чертежа): ' + e.message, 'err');
       statusEl.innerHTML = '⚠ Ошибка сети: ' + e.message;
       statusEl.style.color = '#C07070';
       btn.disabled = false;
@@ -1765,11 +1922,12 @@
             <span class="remark-type-badge ${typeCls}">${typeLabel}</span>
             <span class="remark-priority ${prioCls}">${r.priority || ''}</span>
             <span class="remark-cat">${r.category || ''}</span>
+            ${r.gost_outdated ? '<span class="remark-gost-badge">Норма устарела</span>' : ''}
           </div>
         </div>
         <div class="remark-title">${esc(r.title || '')}</div>
         <div class="remark-desc">${esc(r.description || '')}</div>
-        ${r.suggestion ? `<div class="remark-suggestion">→ ${esc(r.suggestion)}</div>` : ''}
+        ${r.suggestion ? `<div class="remark-suggestion">${esc(r.suggestion).replace(/\n/g, '<br>')}</div>` : ''}
       </div>`;
   }
 
@@ -1823,13 +1981,13 @@
     renderHighlights();
   }
 
-  // ─── PRODUCTS CATALOG ──────────────────────────────────────────────────────
-
+  // ─── PRODUCTS CATALOG ─────────────────────────────────────────────────
   let _productsCurrentType = '';
   let _productsCurrentVariant = '';
   let _productsFiles = [];       // [{path, name, type}]
-  let _productsResults = {};     // filename → {operations, analyzed_at}
-  let _productsQty = {};         // filename → количество (default 1)
+  let _productsResults = {};     // filename -> {operations, analyzed_at}
+  let _productsQty = {};         // filename -> количество (default 1)
+  let _analysisPollTimer = null; // таймер опроса статуса анализа
 
   async function loadProductsTree() {
     try {
@@ -1839,7 +1997,7 @@
     } catch (e) {
       console.error('Ошибка загрузки дерева изделий:', e);
       const el = document.getElementById('sidebar-products-tree');
-      if (el) el.innerHTML = '<div style="padding:4px 10px;font-size:11px;color:var(--text-muted)">Ошибка загрузки</div>';
+      if (el) el.innerHTML = '<div style="padding:4px 10px;font-size:11px;color:var(--text3)">Ошибка загрузки</div>';
     }
   }
 
@@ -1847,7 +2005,7 @@
     const container = document.getElementById('sidebar-products-tree');
     if (!container) return;
     if (!types.length) {
-      container.innerHTML = '<div style="padding:4px 10px;font-size:11px;color:var(--text-muted)">Нет изделий</div>';
+      container.innerHTML = '<div style="padding:4px 10px;font-size:11px;color:var(--text3)">Нет изделий</div>';
       return;
     }
     let html = '';
@@ -1893,14 +2051,13 @@
     const title = document.getElementById('products-title');
     const list = document.getElementById('products-parts-list');
 
-    breadcrumb.innerHTML = `<span>Изделия</span><span style="color:var(--text-muted)"> › </span><span>${esc(type)}</span><span style="color:var(--text-muted)"> › </span><span style="color:var(--text-primary)">${esc(variant)}</span>`;
+    breadcrumb.innerHTML = `<span>Изделия</span><span style="color:var(--text3)"> › </span><span>${esc(type)}</span><span style="color:var(--text3)"> › </span><span style="color:var(--text)">${esc(variant)}</span>`;
     title.textContent = variant;
     list.innerHTML = '<div class="products-empty">Загрузка...</div>';
     document.getElementById('product-totals').style.display = 'none';
     document.getElementById('btn-analyze-all').style.display = 'none';
 
     try {
-      // Загружаем список файлов и кешированные результаты параллельно
       const [filesResp, resultsResp] = await Promise.all([
         fetch(`/api/products/files?type=${encodeURIComponent(type)}&variant=${encodeURIComponent(variant)}`),
         fetch(`/api/products/results?type=${encodeURIComponent(type)}&variant=${encodeURIComponent(variant)}`)
@@ -1913,10 +2070,8 @@
         return;
       }
 
-      // Собираем плоский список PDF-файлов
       _productsFiles = flattenFiles(filesData.tree || []);
       _productsResults = resultsData.results || {};
-      // Восстанавливаем количества из кеша
       Object.keys(_productsResults).forEach(fn => {
         if (_productsResults[fn].qty) _productsQty[fn] = _productsResults[fn].qty;
       });
@@ -1930,7 +2085,6 @@
       document.getElementById('btn-toggle-all').style.display = '';
       _allPartsExpanded = false;
 
-      // Восстанавливаем BOM из кеша или извлекаем из сборочного чертежа
       try {
         const cachedBom = _productsResults['_bom'];
         if (cachedBom && Array.isArray(cachedBom) && cachedBom.length) {
@@ -1963,7 +2117,6 @@
         });
       }
     });
-    // Сборочный чертёж (СБ) отделяем — он не деталь, но нужен для BOM
     return files;
   }
 
@@ -1991,7 +2144,6 @@
     section.className = 'part-section';
     section.id = 'part-' + idx;
 
-    // Имя детали из результата или из имени файла
     const partName = operations && operations.length ? operations[0]['деталь'] || file.name : file.name;
     const hasOps = operations && operations.length > 0;
     const qty = _productsQty[file.name] || 1;
@@ -1999,7 +2151,6 @@
     const hasDrawingAnalysis = !!cachedDA;
     const isAssembly = isAssemblyDrawing(file.name);
 
-    // Суммы времени для этой детали
     let sumTsht = 0, sumTpz = 0;
     if (hasOps) {
       operations.forEach(op => {
@@ -2008,7 +2159,6 @@
       });
     }
 
-    // Header
     const header = document.createElement('div');
     header.className = 'part-header';
     header.innerHTML = `
@@ -2032,7 +2182,7 @@
         <span>шт</span>
       </span>
       ${hasOps ? `<span class="part-time-badge">1шт: ${sumTsht.toFixed(1)}+${sumTpz.toFixed(1)} | ${qty}шт: ${(sumTsht*qty).toFixed(1)}+${(sumTpz*qty).toFixed(1)}</span>` : ''}
-      ${isAssembly ? '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:var(--gold-dim);color:var(--gold);white-space:nowrap">СБ</span>' : ''}
+      ${isAssembly ? '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:var(--amber-light);color:var(--amber);white-space:nowrap">СБ</span>' : ''}
       <button class="part-analyze-btn" id="btn-part-${idx}" onclick="event.stopPropagation(); analyzePart(${idx})">${hasOps ? 'Пересчитать' : 'Рассчитать'}</button>
     `;
     header.onclick = () => {
@@ -2043,23 +2193,18 @@
     };
     section.appendChild(header);
 
-    // Body
     const body = document.createElement('div');
     body.className = 'part-body' + (hasOps ? ' open' : '');
     body.id = 'part-body-' + idx;
 
     if (hasOps) {
-      // Блок маршрута (если есть информация)
       const routeBlock = createRouteBlock(routeInfo, operations, idx);
       if (routeBlock) body.appendChild(routeBlock);
-
-      // Таблица операций
       body.appendChild(createOpsTable(operations, idx));
     } else {
-      body.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center;">Нажмите «Рассчитать» для анализа</div>';
+      body.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:12px;text-align:center;">Нажмите «Рассчитать» для анализа</div>';
     }
 
-    // Блок замечаний по чертежу (если есть)
     if (hasDrawingAnalysis) {
       body.appendChild(createDrawingRemarksBlock(cachedDA, idx));
     }
@@ -2069,7 +2214,6 @@
   }
 
   function createRouteBlock(routeInfo, operations, partIdx) {
-    // Пытаемся извлечь маршрут из обоснования первой операции
     let routeText = '';
     let routeJustif = '';
 
@@ -2077,7 +2221,6 @@
       routeText = routeInfo.операции || '';
       routeJustif = routeInfo.обоснование || '';
     } else if (operations && operations.length) {
-      // Ищем в обосновании первой операции «Выбран маршрут»
       const firstJustif = operations[0]['обоснование'] || '';
       const match = firstJustif.match(/[Вв]ыбран маршрут\s*(M-\d+[^.]*)/i);
       if (match) {
@@ -2093,12 +2236,24 @@
     block.innerHTML = `
       <div class="part-route-header" onclick="this.nextElementSibling.classList.toggle('open')">
         <span class="part-route-badge">Маршрут</span>
+        ${routeInfo && routeInfo.номер ? `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);font-weight:600;margin-right:6px">${esc(routeInfo.номер)}</span>` : ''}
         <span class="part-route-ops">${esc(routeText)}</span>
+        ${routeInfo && routeInfo.уверенность != null ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap;background:${routeInfo.уверенность >= 80 ? 'var(--teal-light)' : routeInfo.уверенность >= 60 ? 'rgba(230,180,60,0.12)' : 'rgba(200,80,80,0.1)'};color:${routeInfo.уверенность >= 80 ? 'var(--teal)' : routeInfo.уверенность >= 60 ? 'var(--amber)' : '#e07070'}">${routeInfo.уверенность}%</span>` : ''}
         <svg viewBox="0 0 10 10" fill="none" width="10" height="10" style="opacity:0.4;flex-shrink:0"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="part-route-body">
         <div class="part-route-justif-label">Обоснование выбора маршрута</div>
-        <div class="part-route-justif">${esc(routeJustif || '—')}</div>
+        <div class="part-route-justif">${formatReasoning(routeJustif || '—')}</div>
+        ${routeInfo && routeInfo.уверенность < 60 && routeInfo.предложенный_маршрут ? `
+        <div class="part-route-low-conf">
+          <span class="part-route-low-conf-icon">⚠️</span>
+          <span>Уверенность в маршруте низкая (${routeInfo.уверенность}%) — подходящего маршрута в каталоге не найдено. Ниже — рекомендуемый маршрут, составленный по фактам чертежа.</span>
+        </div>
+        <div class="part-route-suggestion">
+          <div class="part-route-suggestion-label">💡 Рекомендуемый маршрут</div>
+          <div class="part-route-suggestion-ops">${routeInfo.предложенный_маршрут.split(' | ').map(op => `<span>${esc(op)}</span>`).join('')}</div>
+          <div class="part-route-suggestion-hint">сформирован кодом по признакам чертежа · рекомендуется добавить этот маршрут в каталог</div>
+        </div>` : ''}
       </div>
     `;
     return block;
@@ -2110,11 +2265,23 @@
     const table = document.createElement('table');
     table.className = 'part-ops-table';
     table.innerHTML = `
+      <colgroup>
+        <col style="width:24px">
+        <col style="width:200px">
+        <col style="width:230px">
+        <col style="width:120px">
+        <col style="width:230px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:80px">
+      </colgroup>
       <thead>
         <tr>
-          <th style="width:24px"></th>
+          <th></th>
           <th>Операция</th>
           <th>Оборудование</th>
+          <th>Цех</th>
           <th>Режимы</th>
           <th style="text-align:center">t_шт (ИИ)</th>
           <th style="text-align:center">t_шт (техн.)</th>
@@ -2129,8 +2296,12 @@
       const uid = `p${partIdx}-op${i}`;
       const tsht = parseFloat(op['t_шт_предложено'] || 0);
       const tpz = parseFloat(op['t_пз_предложено'] || 0);
+      // Цех: извлекаем из поля оборудование "[Цех №X]" или из отдельного поля
+      const wsMatch = (op['оборудование'] || '').match(/\[([^\]]+)\]/);
+      const workshop = op['цех'] || (wsMatch ? wsMatch[1] : '—');
+      // Оборудование без суффикса "[Цех №X]"
+      const equipName = (op['оборудование'] || '—').replace(/\s*\[[^\]]*\]\s*$/, '').trim() || '—';
 
-      // Строка операции
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
@@ -2139,8 +2310,9 @@
           </div>
         </td>
         <td class="op-num">${esc(op['операция'] || '—')}</td>
-        <td style="font-size:11px">${esc(op['оборудование'] || '—')}</td>
-        <td style="font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(op['режимы'] || '')}">${esc(op['режимы'] || '—')}</td>
+        <td style="font-size:11px;white-space:normal;word-break:break-word">${esc(equipName)}</td>
+        <td style="font-size:11px;color:var(--text3)">${esc(workshop)}</td>
+        <td style="font-size:10.5px;white-space:pre-wrap;word-break:break-word;line-height:1.5">${esc(op['режимы'] || '—')}</td>
         <td style="text-align:center"><span class="ai-val">AI ${tsht.toFixed(1)}</span></td>
         <td style="text-align:center"><input class="conf-input" type="number" step="0.1" min="0" value="${tsht.toFixed(1)}" data-part="${partIdx}" data-op="${i}" data-field="t_шт"></td>
         <td style="text-align:center"><span class="ai-val">AI ${tpz.toFixed(1)}</span></td>
@@ -2148,12 +2320,11 @@
       `;
       tbody.appendChild(tr);
 
-      // Строка обоснования (скрытая)
       const jr = document.createElement('tr');
       jr.id = 'pj-' + uid;
       jr.style.display = 'none';
       jr.innerHTML = `
-        <td colspan="8" style="padding:0">
+        <td colspan="9" style="padding:0">
           <div class="part-justif-block">
             <div class="part-justif-stripe"></div>
             <div class="part-justif-inner">
@@ -2200,6 +2371,41 @@
     }
   }
 
+  function _stopAnalysisPoll() {
+    if (_analysisPollTimer) { clearInterval(_analysisPollTimer); _analysisPollTimer = null; }
+  }
+
+  function _startAnalysisPoll(getBtnEl, getBodyEl) {
+    _stopAnalysisPoll();
+    const stageNames = {
+      1: 'Извлечение фактов',
+      2: 'Выбор маршрута',
+      3: 'Выбор маршрута',
+      4: 'Подбор оборудования',
+      5: 'Расчёт норм',
+      6: 'Валидация',
+    };
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/products/analysis_status');
+        const s = await r.json();
+        if (s.active) {
+          const btnEl = getBtnEl();
+          const bodyEl = getBodyEl();
+          const label = `Этап ${s.stage}/6 — ${stageNames[s.stage] || s.stage_name}`;
+          if (btnEl) btnEl.textContent = label;
+          if (bodyEl) {
+            const ind = bodyEl.querySelector('.stage-progress-indicator');
+            if (ind) ind.textContent = label;
+          }
+        }
+      } catch {}
+    };
+    // Первый опрос через 3 сек, затем каждые 5 сек
+    setTimeout(poll, 3000);
+    _analysisPollTimer = setInterval(poll, 5000);
+  }
+
   async function analyzePart(idx) {
     const file = _productsFiles[idx];
     if (!file) return;
@@ -2207,11 +2413,18 @@
     const btn = document.getElementById('btn-part-' + idx);
     const body = document.getElementById('part-body-' + idx);
     if (btn) { btn.classList.add('loading'); btn.textContent = 'Анализ...'; }
-    if (body) { body.classList.add('open'); body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">⏳ Анализ... (может занять до минуты)</div>'; }
+    if (body) {
+      body.classList.add('open');
+      body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;"><span class="stage-progress-indicator">Анализ... (может занять до минуты)</span></div>';
+    }
 
-    // Раскрываем секцию
     const section = document.getElementById('part-' + idx);
     if (section) section.querySelector('.chevron').classList.add('open');
+
+    _startAnalysisPoll(
+      () => document.getElementById('btn-part-' + idx),
+      () => document.getElementById('part-body-' + idx),
+    );
 
     try {
       const resp = await fetch('/api/products/analyze_part', {
@@ -2223,6 +2436,7 @@
           filename: file.path
         })
       });
+      _stopAnalysisPoll();
       const data = await resp.json();
       if (data.error) {
         body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка: ${esc(data.error)}</div>`;
@@ -2230,20 +2444,18 @@
         return;
       }
 
-      // Сохраняем результат
       const routeInfo = data.route || null;
       _productsResults[file.name] = { operations: data.operations, route: routeInfo, analyzed_at: new Date().toISOString() };
 
-      // Перерисовываем секцию
       const newSection = createPartSection(file, idx, data.operations, routeInfo);
       section.replaceWith(newSection);
-      // Раскрываем
       newSection.querySelector('.part-body').classList.add('open');
       newSection.querySelector('.chevron').classList.add('open');
 
       updateProductTotals();
 
     } catch (e) {
+      _stopAnalysisPoll();
       body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка сети: ${esc(e.message)}</div>`;
       if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
     }
@@ -2273,11 +2485,9 @@
         return;
       }
 
-      // Сохраняем
       if (!_productsResults[file.name]) _productsResults[file.name] = {};
       _productsResults[file.name].drawing_analysis = data;
 
-      // Перерисовываем секцию
       const cached = _productsResults[file.name];
       const ops = cached ? cached.operations : null;
       const routeInfo = cached ? cached.route : null;
@@ -2298,8 +2508,9 @@
 
     const remarks = analysis.remarks || [];
     const summary = analysis.summary || '';
-    const zamCount = remarks.filter(r => r.type === 'замечание').length;
-    const optCount = remarks.filter(r => r.type === 'оптимизация').length;
+    const getType = r => r.type || r['тип'] || 'замечание';
+    const zamCount = remarks.filter(r => getType(r) === 'замечание').length;
+    const optCount = remarks.filter(r => getType(r) === 'оптимизация').length;
 
     let html = `<div class="part-remarks-header">
       Анализ чертежа
@@ -2312,17 +2523,26 @@
     }
 
     remarks.forEach(r => {
-      const typeClass = r.type === 'замечание' ? 'zam' : 'opt';
-      const prioClass = r.priority === 'высокий' ? 'high' : r.priority === 'средний' ? 'mid' : 'low';
+      // Нормализуем — модель может вернуть поля с другими именами
+      const rType = r.type || r['тип'] || 'замечание';
+      const rPriority = r.priority || r['приоритет'] || '';
+      const rCategory = r.category || r['категория'] || '';
+      const rTitle = r.title || r['заголовок'] || r['название'] || '';
+      const rDesc = r.description || r['описание'] || '';
+      const rSug = r.suggestion || r['рекомендация'] || '';
+
+      const typeClass = rType === 'оптимизация' ? 'opt' : 'zam';
+      const prioClass = rPriority === 'высокий' ? 'high' : rPriority === 'средний' ? 'mid' : 'low';
       html += `<div class="part-remark">
         <div class="part-remark-badges">
-          <span class="part-remark-badge ${typeClass}">${esc(r.type)}</span>
-          <span class="part-remark-badge ${prioClass}">${esc(r.priority)}</span>
-          <span class="part-remark-badge" style="background:var(--bg-elevated);color:var(--text-muted)">${esc(r.category || '')}</span>
+          <span class="part-remark-badge ${typeClass}">${esc(rType)}</span>
+          ${rPriority ? `<span class="part-remark-badge ${prioClass}">${esc(rPriority)}</span>` : ''}
+          ${rCategory ? `<span class="part-remark-badge" style="background:var(--card2-bg);color:var(--text3)">${esc(rCategory)}</span>` : ''}
+          ${r.gost_outdated ? '<span class="part-remark-badge zam">Норма устарела</span>' : ''}
         </div>
-        <div class="part-remark-title">${esc(r.title || '')}</div>
-        <div class="part-remark-desc">${esc(r.description || '')}</div>
-        ${r.suggestion ? `<div class="part-remark-sug">${esc(r.suggestion)}</div>` : ''}
+        <div class="part-remark-title">${esc(rTitle)}</div>
+        <div class="part-remark-desc">${esc(rDesc)}</div>
+        ${rSug ? `<div class="part-remark-sug">${esc(rSug).replace(/\n/g, '<br>')}</div>` : ''}
       </div>`;
     });
 
@@ -2375,14 +2595,11 @@
   }
 
   function applyBomToFiles(bom) {
-    // Сопоставляем BOM с файлами по названию детали
     _productsFiles.forEach(file => {
       const fname = file.name.toLowerCase();
       for (const item of bom) {
         const bomName = (item['деталь'] || '').toLowerCase();
         if (!bomName) continue;
-        // Проверяем есть ли совпадение: имя детали из BOM содержится в имени файла или наоборот
-        // Также проверяем совпадение с результатом анализа (название детали из операций)
         const cached = _productsResults[file.name];
         const partName = cached && cached.operations && cached.operations.length
           ? (cached.operations[0]['деталь'] || '').toLowerCase() : '';
@@ -2402,7 +2619,6 @@
     const qty = Math.max(1, parseInt(val) || 1);
     _productsQty[file.name] = qty;
 
-    // Сохраняем кол-во в кеш на сервере
     if (_productsResults[file.name]) {
       _productsResults[file.name].qty = qty;
       fetch('/api/products/save_qty', {
@@ -2417,7 +2633,6 @@
       }).catch(() => {});
     }
 
-    // Пересчитаем бейдж и итоги
     renderPartsPanel();
   }
 
@@ -2425,13 +2640,12 @@
     const file = _productsFiles[idx];
     if (!file) return;
     const url = `/api/products/pdf?type=${encodeURIComponent(_productsCurrentType)}&variant=${encodeURIComponent(_productsCurrentVariant)}&path=${encodeURIComponent(file.path)}`;
-    window.open(url, '_blank');
+    openPdfModal(url, file.name);
   }
 
   function exportProductToExcel() {
     const sep = ';';
     const rows = [];
-    // Заголовок
     rows.push(['Изделие', 'Файл', 'Деталь', 'Кол-во', 'Операция', 'Оборудование', 'Режимы', 't_шт (1шт)', 't_пз (1шт)', 't_шт (всего)', 't_пз (всего)', 'Обоснование'].join(sep));
 
     let totalTsht = 0, totalTpz = 0;
@@ -2461,7 +2675,6 @@
       });
     });
 
-    // Итоговая строка
     rows.push('');
     rows.push(['', '', '', '', '', '', 'ИТОГО (с кол-вом):', '', '', totalTsht.toFixed(1), totalTpz.toFixed(1), 'Общее: ' + (totalTsht + totalTpz).toFixed(1)].map(v => '"' + v + '"').join(sep));
 
@@ -2514,8 +2727,293 @@
     loadProductsTree();
   });
 
+  // ─── LOG SYSTEM ──────────────────────────────────────────────────────
+  const _logs = [];
+
+  function addLog(msg, level) {
+    level = level || 'info';
+    const now = new Date();
+    const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    _logs.push({ ts, msg, level });
+    document.getElementById('log-count').textContent = _logs.length;
+
+    const body = document.getElementById('log-body');
+    if (_logs.length === 1) body.innerHTML = '';
+
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+    el.innerHTML = '<span class="log-time">' + ts + '</span><span class="log-msg ' + level + '">' + msg + '</span>';
+    body.appendChild(el);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function openLogPanel() {
+    document.getElementById('log-overlay').classList.add('open');
+    const body = document.getElementById('log-body');
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function closeLogPanel() {
+    document.getElementById('log-overlay').classList.remove('open');
+  }
+
+  function copyLog() {
+    const text = _logs.map(l => l.ts + '  ' + l.msg).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('log-copy-btn');
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 7.5l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Скопировано';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 4V2.5A1.5 1.5 0 008.5 1h-6A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.2"/></svg> Копировать';
+      }, 2000);
+    });
+  }
+
+  function clearLog() {
+    _logs.length = 0;
+    document.getElementById('log-count').textContent = '0';
+    document.getElementById('log-body').innerHTML = '<div class="log-empty">Логи пока пусты</div>';
+  }
+
+  function renderMetricsLog(metrics) {
+    if (!metrics) return;
+    const stages = metrics['этапы'] || [];
+    const totals = metrics['итого'] || {};
+
+    // По каждому этапу
+    stages.forEach(s => {
+      if (s['входные_токены'] || s['выходные_токены']) {
+        addLog(
+          s['этап'] + ': '
+          + '<span class="log-tok-in">↓' + s['входные_токены'] + '</span> '
+          + '<span class="log-tok-out">↑' + s['выходные_токены'] + '</span> '
+          + '(' + (s['время_мс'] / 1000).toFixed(1) + ' сек, '
+          + s['вызовов_llm'] + ' вызов'
+          + (s['вызовов_llm'] > 1 ? 'ов' : '') + ')',
+          'info'
+        );
+      }
+    });
+
+    // Итоговая строка
+    const totalIn = totals['входные_токены'] || 0;
+    const totalOut = totals['выходные_токены'] || 0;
+    const totalAll = totals['всего_токенов'] || (totalIn + totalOut);
+    const timeSec = totals['время_сек'] || 0;
+    const calls = totals['вызовов_llm'] || 0;
+
+    if (totalIn || totalOut) {
+      const body = document.getElementById('log-body');
+      const bar = document.createElement('div');
+      bar.className = 'log-metrics-bar';
+      bar.innerHTML =
+        '<div class="log-metric-item"><span class="log-metric-label">Вход:</span><span class="log-metric-val log-tok-in">' + totalIn.toLocaleString() + '</span></div>'
+        + '<div class="log-metric-item"><span class="log-metric-label">Выход:</span><span class="log-metric-val log-tok-out">' + totalOut.toLocaleString() + '</span></div>'
+        + '<div class="log-metric-item"><span class="log-metric-label">Всего:</span><span class="log-metric-val">' + totalAll.toLocaleString() + '</span></div>'
+        + '<div class="log-metric-item"><span class="log-metric-label">Время:</span><span class="log-metric-val">' + timeSec + ' сек</span></div>'
+        + '<div class="log-metric-item"><span class="log-metric-label">Вызовов:</span><span class="log-metric-val">' + calls + '</span></div>';
+      body.appendChild(bar);
+      body.scrollTop = body.scrollHeight;
+
+      _logs.push({ ts: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        msg: 'ИТОГО: вход=' + totalIn + ', выход=' + totalOut + ', всего=' + totalAll + ', ' + timeSec + ' сек, ' + calls + ' вызовов', level: 'step' });
+      document.getElementById('log-count').textContent = _logs.length;
+    }
+  }
 </script>
 
+<!-- LOG PANEL OVERLAY -->
+<div class="log-overlay" id="log-overlay" onclick="if(event.target===this)closeLogPanel()">
+  <div class="log-panel">
+    <div class="log-header">
+      <div class="log-title">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h4M4 8h7M4 11h5" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.7"/></svg>
+        Журнал операций
+      </div>
+      <div class="log-actions">
+        <button class="log-btn" id="log-copy-btn" onclick="copyLog()">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 4V2.5A1.5 1.5 0 008.5 1h-6A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.2"/></svg>
+          Копировать
+        </button>
+        <button class="log-btn" onclick="clearLog()">Очистить</button>
+        <button class="log-btn-close" onclick="closeLogPanel()">&times;</button>
+      </div>
+    </div>
+    <div class="log-body" id="log-body">
+      <div class="log-empty">Логи пока пусты</div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF VIEWER MODAL -->
+<div class="pdf-modal-overlay" id="pdf-modal-overlay" onclick="if(event.target===this)closePdfModal()">
+  <div class="pdf-modal">
+    <div class="pdf-modal-header">
+      <span class="pdf-modal-title" id="pdf-modal-title">Чертёж</span>
+      <div style="display:flex;align-items:center;">
+        <div class="pdf-modal-controls">
+          <button onclick="pdfModalZoom(-0.2)" title="Уменьшить">−</button>
+          <span class="pdf-modal-zoom-label" id="pdf-modal-zoom-label">100%</span>
+          <button onclick="pdfModalZoom(0.2)" title="Увеличить">+</button>
+          <button onclick="pdfModalZoomReset()" title="По размеру" style="font-size:11px;">⊡</button>
+        </div>
+        <button class="pdf-modal-close" onclick="closePdfModal()" title="Закрыть">✕</button>
+      </div>
+    </div>
+    <div class="pdf-modal-viewport" id="pdf-modal-viewport">
+      <div class="pdf-modal-canvas-wrap" id="pdf-modal-canvas-wrap">
+        <div class="pdf-modal-pages" id="pdf-modal-pages"></div>
+      </div>
+      <div class="pdf-modal-loading" id="pdf-modal-loading" style="display:none;">
+        <span class="loader"></span> Загрузка чертежа...
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PDF MODAL VIEWER ──────────────────────────────────────────────────────────
+(function() {
+  let _scale = 1;
+  let _fitScale = 1;
+  let _panX = 0, _panY = 0;
+  let _dragging = false;
+  let _startX = 0, _startY = 0;
+  let _startPanX = 0, _startPanY = 0;
+
+  const overlay   = document.getElementById('pdf-modal-overlay');
+  const viewport  = document.getElementById('pdf-modal-viewport');
+  const wrap      = document.getElementById('pdf-modal-canvas-wrap');
+  const pagesDiv  = document.getElementById('pdf-modal-pages');
+  const loading   = document.getElementById('pdf-modal-loading');
+  const zoomLabel = document.getElementById('pdf-modal-zoom-label');
+  const titleEl   = document.getElementById('pdf-modal-title');
+
+  function updateTransform() {
+    wrap.style.transform = `translate(${_panX}px, ${_panY}px) scale(${_scale})`;
+    zoomLabel.textContent = Math.round(_scale * 100) + '%';
+  }
+
+  window.openPdfModal = async function(url, title) {
+    titleEl.textContent = title || 'Чертёж';
+    pagesDiv.innerHTML = '';
+    _scale = 1; _panX = 0; _panY = 0;
+    updateTransform();
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    loading.style.display = 'flex';
+
+    try {
+      if (typeof pdfjsLib === 'undefined') {
+        pagesDiv.innerHTML = '<div style="color:var(--text3);padding:40px;text-align:center;">PDF.js не загружен. <a href="'+url+'" target="_blank" style="color:var(--teal);">Открыть в новой вкладке</a></div>';
+        loading.style.display = 'none';
+        return;
+      }
+      const resp = await fetch(url);
+      const buf = await resp.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf)}).promise;
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const vp = page.getViewport({scale: 2});
+        const canvas = document.createElement('canvas');
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        canvas.style.width = vp.width/2 + 'px';
+        canvas.style.height = vp.height/2 + 'px';
+        canvas.style.borderRadius = '4px';
+        canvas.style.boxShadow = '0 2px 12px rgba(0,0,0,0.3)';
+        pagesDiv.appendChild(canvas);
+        await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+      }
+
+      requestAnimationFrame(() => {
+        const vw = viewport.clientWidth;
+        const vh = viewport.clientHeight;
+        const cw = pagesDiv.scrollWidth;
+        const ch = pagesDiv.scrollHeight;
+        if (cw > 0 && ch > 0) {
+          _fitScale = Math.min(vw / cw, vh / ch, 1);
+          _scale = _fitScale;
+          _panX = Math.max(0, (vw - cw * _scale) / 2);
+          _panY = Math.max(0, (vh - ch * _scale) / 2);
+          updateTransform();
+        }
+      });
+    } catch(e) {
+      pagesDiv.innerHTML = '<div style="color:#CC6060;padding:40px;text-align:center;">Ошибка загрузки: '+e.message+'</div>';
+    } finally {
+      loading.style.display = 'none';
+    }
+  };
+
+  window.closePdfModal = function() {
+    overlay.classList.remove('visible');
+    document.body.style.overflow = '';
+    pagesDiv.innerHTML = '';
+  };
+
+  window.pdfModalZoom = function(delta) {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const cx = vw / 2, cy = vh / 2;
+    const oldScale = _scale;
+    _scale = Math.max(0.1, Math.min(10, _scale + delta));
+    _panX = cx - (cx - _panX) * (_scale / oldScale);
+    _panY = cy - (cy - _panY) * (_scale / oldScale);
+    updateTransform();
+  };
+
+  window.pdfModalZoomReset = function() {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const cw = pagesDiv.scrollWidth / _scale;
+    const ch = pagesDiv.scrollHeight / _scale;
+    _fitScale = Math.min(vw / cw, vh / ch, 1);
+    _scale = _fitScale;
+    _panX = Math.max(0, (vw - cw * _scale) / 2);
+    _panY = Math.max(0, (vh - ch * _scale) / 2);
+    updateTransform();
+  };
+
+  viewport.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    _dragging = true;
+    _startX = e.clientX; _startY = e.clientY;
+    _startPanX = _panX; _startPanY = _panY;
+    viewport.classList.add('grabbing');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!_dragging) return;
+    _panX = _startPanX + (e.clientX - _startX);
+    _panY = _startPanY + (e.clientY - _startY);
+    updateTransform();
+  });
+  window.addEventListener('mouseup', function() {
+    _dragging = false;
+    viewport.classList.remove('grabbing');
+  });
+
+  viewport.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const oldScale = _scale;
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    _scale = Math.max(0.1, Math.min(10, _scale + delta));
+    _panX = mx - (mx - _panX) * (_scale / oldScale);
+    _panY = my - (my - _panY) * (_scale / oldScale);
+    updateTransform();
+  }, {passive: false});
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && overlay.classList.contains('visible')) closePdfModal();
+  });
+})();
+</script>
 
 </body>
 </html>
