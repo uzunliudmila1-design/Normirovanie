@@ -10,154 +10,359 @@
 """
 
 import json
+import os
 import time
 import sqlite3
+import threading
 from datetime import datetime
 
 from config import DB_PATH
 from models.schemas import PipelineResult, SelectedRoute, DrawingFacts, StageMetrics, PipelineMetrics
 from services.drawing_facts_service import extract_facts
-from services.route_selection_service import select_route, route_from_mk
+from services.route_selection_service import select_route
 from services.equipment_selection_service import select_equipment
 from services.norm_calculation_service import calculate_norms
 from services.validation_service import validate_result
+from services.rules_service import log_violation
+
+
+# ─── Трекер текущего анализа ─────────────────────────────────────────────────
+
+_status_lock = threading.Lock()
+_current_status: dict = {"active": False, "stage": 0, "stage_name": "", "filename": ""}
+
+_STAGE_NAMES = {
+    1: "Извлечение фактов из чертежа",
+    2: "Фильтрация маршрутов",
+    3: "Выбор маршрута",
+    4: "Подбор оборудования",
+    5: "Расчёт норм времени",
+    6: "Валидация",
+}
+
+
+def _set_status(stage: int, filename: str = "") -> None:
+    with _status_lock:
+        _current_status.update({
+            "active": stage > 0,
+            "stage": stage,
+            "stage_name": _STAGE_NAMES.get(stage, ""),
+            "filename": filename,
+        })
+
+
+def get_analysis_status() -> dict:
+    """Возвращает текущий статус конвейера (для polling с фронтенда)."""
+    with _status_lock:
+        return dict(_current_status)
 
 
 def run_pipeline(
     chertezh_file,
-    marshrutnaya_file=None,
     batch_size: int = 1,
-    mk_operations: list[str] | None = None,
+    is_assembly: bool = False,
 ) -> PipelineResult:
     """Полный конвейер нормирования.
 
     Args:
         chertezh_file: PDF чертежа (обязательно)
-        marshrutnaya_file: PDF маршрутной карты (опционально)
         batch_size: размер партии
-        mk_operations: список операций из МК (для Режима А, если уже извлечены)
     """
     print("=" * 60, flush=True)
     print("[КОНВЕЙЕР] Запуск нормирования", flush=True)
 
+    _filename = os.path.basename(str(chertezh_file)) if chertezh_file else ""
     pipeline_t0 = time.monotonic()
     all_stages = []
 
-    # ── Этап 1: Извлечение фактов ──
-    print("[КОНВЕЙЕР] Этап 1: Извлечение фактов из чертежа...", flush=True)
-    t0 = time.monotonic()
-    facts, llm_m1 = extract_facts(chertezh_file, marshrutnaya_file)
-    stage1 = StageMetrics(
-        stage="1. Извлечение фактов",
-        duration_ms=int((time.monotonic() - t0) * 1000),
-        llm_calls=llm_m1,
-    )
-    all_stages.append(stage1)
-    _print_stage_metrics(stage1)
+    try:
+        # ── Этап 1: Извлечение фактов ──
+        _set_status(1, _filename)
+        print("[КОНВЕЙЕР] Этап 1: Извлечение фактов из чертежа...", flush=True)
+        t0 = time.monotonic()
+        facts, llm_m1 = extract_facts(chertezh_file)
 
-    # ── Этапы 2-3: Выбор маршрута ──
-    has_mk = marshrutnaya_file is not None
-    t0 = time.monotonic()
-    if has_mk:
-        # Режим А: маршрут из МК — операции извлекает модель на этапе 5
-        print("[КОНВЕЙЕР] Этапы 2-3: Режим А — маршрут из маршрутной карты", flush=True)
-        route = route_from_mk(mk_operations or [])
-        llm_m23 = []
-    else:
-        # Режим Б: фильтрация + выбор из каталога
-        print("[КОНВЕЙЕР] Этапы 2-3: Режим Б — выбор маршрута из каталога...", flush=True)
+        # Для сборочных чертежей: детали приходят готовыми → сбрасываем признаки резки/мехобработки
+        if is_assembly:
+            facts.is_assembly = True
+            facts.has_cutting = False
+            facts.has_machining = False
+            facts.has_grinding = False
+            facts.has_bending = False
+            facts.has_heat_treatment = False
+            facts.has_assembly = True
+            print("[КОНВЕЙЕР] Сборочный чертёж: признаки резки/мехобработки сброшены", flush=True)
+
+        stage1 = StageMetrics(
+            stage="1. Извлечение фактов",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            llm_calls=llm_m1,
+        )
+        all_stages.append(stage1)
+        _print_stage_metrics(stage1)
+
+        # ── Этапы 2-3: Выбор маршрута ──
+        _set_status(2, _filename)
+        t0 = time.monotonic()
+        print("[КОНВЕЙЕР] Этапы 2-3: Выбор маршрута из каталога...", flush=True)
         route, llm_m23 = select_route(facts)
 
-    stage23 = StageMetrics(
-        stage="2-3. Выбор маршрута",
-        duration_ms=int((time.monotonic() - t0) * 1000),
-        llm_calls=llm_m23,
-    )
-    all_stages.append(stage23)
-    _print_stage_metrics(stage23)
+        stage23 = StageMetrics(
+            stage="2-3. Выбор маршрута",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            llm_calls=llm_m23,
+        )
+        all_stages.append(stage23)
+        _print_stage_metrics(stage23)
 
-    # ── Этап 4: Подбор оборудования ──
-    print("[КОНВЕЙЕР] Этап 4: Подбор оборудования...", flush=True)
-    t0 = time.monotonic()
-    # Формируем нумерованные операции
-    if route.operations:
-        numbered_ops = []
-        for i, op in enumerate(route.operations):
-            num = f"{(i + 1) * 10:03d}"
-            # Если операция уже содержит номер — не дублируем
-            if op[:3].isdigit():
-                numbered_ops.append(op)
+        # ── Этап 4: Подбор оборудования ──
+        _set_status(4, _filename)
+        print("[КОНВЕЙЕР] Этап 4: Подбор оборудования...", flush=True)
+        t0 = time.monotonic()
+        # Формируем нумерованные операции
+        if route.operations:
+            numbered_ops = []
+            for i, op in enumerate(route.operations):
+                num = f"{(i + 1) * 10:03d}"
+                # Если операция уже содержит номер — не дублируем
+                if op[:3].isdigit():
+                    numbered_ops.append(op)
+                else:
+                    numbered_ops.append(f"{num} {op}")
+        else:
+            numbered_ops = []
+
+        equipment_choices, llm_m4 = select_equipment(numbered_ops, facts)
+        stage4 = StageMetrics(
+            stage="4. Подбор оборудования",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            llm_calls=llm_m4,
+        )
+        all_stages.append(stage4)
+        _print_stage_metrics(stage4)
+
+        # ── Этап 5: Расчёт норм ──
+        _set_status(5, _filename)
+        print("[КОНВЕЙЕР] Этап 5: Расчёт норм времени...", flush=True)
+        t0 = time.monotonic()
+        # Перематываем файл, т.к. он мог быть прочитан на этапе 1
+        if hasattr(chertezh_file, "seek"):
+            chertezh_file.seek(0)
+
+        norms, llm_m5 = calculate_norms(
+            operations=numbered_ops,
+            equipment_choices=equipment_choices,
+            facts=facts,
+            chertezh_file=chertezh_file,
+            batch_size=batch_size,
+        )
+        stage5 = StageMetrics(
+            stage="5. Расчёт норм",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            llm_calls=llm_m5,
+        )
+        all_stages.append(stage5)
+        _print_stage_metrics(stage5)
+
+        # ── Коррекция порядка: очистка всегда после сварки ──
+        norms = _fix_cleaning_after_welding(norms)
+
+        # ── Правило 1: отверстия + плазма → убрать Сверлильную ──
+        before1 = len(norms)
+        norms = _fix_no_drilling_with_plasma(norms, facts)
+        if len(norms) == before1:
+            print("[ПРАВИЛО 1] Проверка пройдена (Сверлильная не удалялась)", flush=True)
+
+        # ── Правило 4: рихтовка запрещена при толщине < 10 мм ──
+        before4 = len(norms)
+        norms = _fix_no_richtirovka_thin_metal(norms, facts)
+        if len(norms) == before4:
+            print("[ПРАВИЛО 4] Проверка пройдена (Рихтовка не удалялась)", flush=True)
+
+        # ── Этап 6: Валидация ──
+        _set_status(6, _filename)
+        print("[КОНВЕЙЕР] Этап 6: Валидация результата...", flush=True)
+        t0 = time.monotonic()
+        warnings = validate_result(facts, route, equipment_choices, norms)
+        stage6 = StageMetrics(
+            stage="6. Валидация",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            llm_calls=[],
+        )
+        all_stages.append(stage6)
+        for w in warnings:
+            print(f"  {w}", flush=True)
+
+        # Логируем нарушения бизнес-правил в файл правил
+        rule_warnings = [w for w in warnings if w.startswith("[ПРАВИЛО]")]
+        for rw in rule_warnings:
+            log_violation(
+                drawing_name=_filename,
+                stage="конвейер (этапы 3-4)",
+                llm_choice="см. reasoning в результате",
+                rule_hint=rw.replace("[ПРАВИЛО] ", "", 1),
+                action_taken="предупреждение добавлено в результат",
+            )
+
+        # ── Сборка метрик ──
+        metrics = PipelineMetrics(
+            stages=all_stages,
+            total_duration_ms=int((time.monotonic() - pipeline_t0) * 1000),
+        )
+
+        result = PipelineResult(
+            facts=facts,
+            route=route,
+            equipment_choices=equipment_choices,
+            operations=norms,
+            warnings=warnings,
+            metrics=metrics,
+        )
+
+        _print_summary(metrics, len(norms), len(warnings))
+        _save_metrics(metrics, facts.detail_name)
+
+        return result
+
+    finally:
+        _set_status(0)
+
+
+def _fix_cleaning_after_welding(norms):
+    """Переносит Очистку дробеметную/пескоструйную после последней сварочной операции.
+
+    Правило: очистка выполняется над уже сваренной конструкцией, поэтому
+    она не может стоять до сварки.
+    """
+    from models.schemas import OperationNorm
+
+    def _is_cleaning(op_name: str) -> bool:
+        n = op_name.lower()
+        return "дробемет" in n or "пескоструй" in n or "дробеструй" in n
+
+    def _is_welding(op_name: str) -> bool:
+        n = op_name.lower()
+        return "сварк" in n or "прихватк" in n
+
+    def _op_name(norm) -> str:
+        parts = norm.operation.strip().split(None, 1)
+        return parts[1] if len(parts) == 2 and parts[0].isdigit() else norm.operation
+
+    cleaning_idx = [i for i, n in enumerate(norms) if _is_cleaning(_op_name(n))]
+    welding_idx = [i for i, n in enumerate(norms) if _is_welding(_op_name(n))]
+
+    if not cleaning_idx or not welding_idx:
+        return norms
+
+    last_weld = max(welding_idx)
+    moved = False
+    result = list(norms)
+    for ci in sorted(cleaning_idx, reverse=True):
+        if ci < last_weld:
+            op = result.pop(ci)
+            # last_weld сдвинулся на -1 после pop
+            insert_at = last_weld  # вставляем после (уже -1 от pop)
+            result.insert(insert_at, op)
+            moved = True
+            print(
+                f"[КОНВЕЙЕР] Коррекция: '{op.operation}' перенесена после сварки "
+                f"(была поз.{ci + 1}, теперь поз.{insert_at + 1})",
+                flush=True,
+            )
+
+    if moved:
+        # Перенумеровываем операции
+        for j, n in enumerate(result):
+            num = f"{(j + 1) * 10:03d}"
+            parts = n.operation.strip().split(None, 1)
+            if len(parts) == 2 and parts[0].isdigit():
+                n.operation = f"{num} {parts[1]}"
             else:
-                numbered_ops.append(f"{num} {op}")
-    else:
-        numbered_ops = []
-
-    equipment_choices, llm_m4 = select_equipment(numbered_ops, facts)
-    stage4 = StageMetrics(
-        stage="4. Подбор оборудования",
-        duration_ms=int((time.monotonic() - t0) * 1000),
-        llm_calls=llm_m4,
-    )
-    all_stages.append(stage4)
-    _print_stage_metrics(stage4)
-
-    # ── Этап 5: Расчёт норм ──
-    print("[КОНВЕЙЕР] Этап 5: Расчёт норм времени...", flush=True)
-    t0 = time.monotonic()
-    # Перематываем файлы, т.к. они могли быть прочитаны на этапе 1
-    if hasattr(chertezh_file, "seek"):
-        chertezh_file.seek(0)
-    if marshrutnaya_file and hasattr(marshrutnaya_file, "seek"):
-        marshrutnaya_file.seek(0)
-
-    norms, llm_m5 = calculate_norms(
-        operations=numbered_ops,
-        equipment_choices=equipment_choices,
-        facts=facts,
-        chertezh_file=chertezh_file,
-        marshrutnaya_file=marshrutnaya_file,
-        batch_size=batch_size,
-    )
-    stage5 = StageMetrics(
-        stage="5. Расчёт норм",
-        duration_ms=int((time.monotonic() - t0) * 1000),
-        llm_calls=llm_m5,
-    )
-    all_stages.append(stage5)
-    _print_stage_metrics(stage5)
-
-    # ── Этап 6: Валидация ──
-    print("[КОНВЕЙЕР] Этап 6: Валидация результата...", flush=True)
-    t0 = time.monotonic()
-    warnings = validate_result(facts, route, equipment_choices, norms)
-    stage6 = StageMetrics(
-        stage="6. Валидация",
-        duration_ms=int((time.monotonic() - t0) * 1000),
-        llm_calls=[],
-    )
-    all_stages.append(stage6)
-    for w in warnings:
-        print(f"  {w}", flush=True)
-
-    # ── Сборка метрик ──
-    metrics = PipelineMetrics(
-        stages=all_stages,
-        total_duration_ms=int((time.monotonic() - pipeline_t0) * 1000),
-    )
-
-    result = PipelineResult(
-        facts=facts,
-        route=route,
-        equipment_choices=equipment_choices,
-        operations=norms,
-        warnings=warnings,
-        metrics=metrics,
-    )
-
-    _print_summary(metrics, len(norms), len(warnings))
-    _save_metrics(metrics, facts.detail_name)
+                n.operation = f"{num} {n.operation}"
 
     return result
+
+
+_SHEET_METAL_TYPES = ("листов", "ребро", "щека", "фланец", "пластин", "профил", "косынк", "заглушк")
+
+
+def _is_sheet_metal(facts) -> bool:
+    """Листовая деталь — вырезается плазмой/лазером, отверстия тоже режутся."""
+    dt = (facts.detail_type or "").lower()
+    dn = (facts.detail_name or "").lower()
+    return any(k in dt or k in dn for k in _SHEET_METAL_TYPES)
+
+
+def _fix_no_drilling_with_plasma(norms, facts):
+    """Правило 1: если деталь режется плазмой/лазером и есть отверстия —
+    убрать Сверлильную и Фрезерную (для листовых деталей).
+
+    Отверстия в листовой плазменной/лазерной детали вырезаются той же резкой.
+    """
+    def _is_cutting(op: str) -> bool:
+        lo = op.lower()
+        return "плазм" in lo or "газо-плазм" in lo or "лазерн" in lo
+
+    def _is_drilling(op: str) -> bool:
+        return "сверлильн" in op.lower()
+
+    def _is_milling(op: str) -> bool:
+        return "фрезерн" in op.lower()
+
+    def _op_name(norm) -> str:
+        parts = norm.operation.strip().split(None, 1)
+        return parts[1] if len(parts) == 2 and parts[0].isdigit() else norm.operation
+
+    has_cutting = any(_is_cutting(_op_name(n)) for n in norms)
+    if not (has_cutting and facts.has_holes):
+        return norms
+
+    sheet = _is_sheet_metal(facts)
+
+    def _should_remove(n) -> bool:
+        op = _op_name(n)
+        if _is_drilling(op):
+            return True
+        if sheet and _is_milling(op):
+            return True
+        return False
+
+    filtered = [n for n in norms if not _should_remove(n)]
+    removed = len(norms) - len(filtered)
+    if removed:
+        method = "плазмой/лазером"
+        print(f"[ПРАВИЛО 1] Удалено {removed} операций (Сверлильная/Фрезерная) — отверстия режутся {method}", flush=True)
+        for j, n in enumerate(filtered):
+            num = f"{(j + 1) * 10:03d}"
+            parts = n.operation.strip().split(None, 1)
+            if len(parts) == 2 and parts[0].isdigit():
+                n.operation = f"{num} {parts[1]}"
+    return filtered
+
+
+def _fix_no_richtirovka_thin_metal(norms, facts):
+    """Правило 4: рихтовка запрещена если толщина детали < 10 мм."""
+    thickness = facts.height_mm or facts.width_mm  # высота/толщина листа
+    if thickness is None or thickness >= 10:
+        return norms
+
+    def _is_richtirovka(op: str) -> bool:
+        return "рихтов" in op.lower() or "правк" in op.lower()
+
+    def _op_name(norm) -> str:
+        parts = norm.operation.strip().split(None, 1)
+        return parts[1] if len(parts) == 2 and parts[0].isdigit() else norm.operation
+
+    filtered = [n for n in norms if not _is_richtirovka(_op_name(n))]
+    removed = len(norms) - len(filtered)
+    if removed:
+        print(f"[ПРАВИЛО 4] Удалено {removed} операций «Рихтовка» — толщина {thickness} мм < 10 мм", flush=True)
+        for j, n in enumerate(filtered):
+            num = f"{(j + 1) * 10:03d}"
+            parts = n.operation.strip().split(None, 1)
+            if len(parts) == 2 and parts[0].isdigit():
+                n.operation = f"{num} {parts[1]}"
+    return filtered
 
 
 def _print_stage_metrics(stage: StageMetrics):

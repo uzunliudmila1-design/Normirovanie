@@ -15,7 +15,6 @@ def calculate_norms(
     equipment_choices: list[EquipmentChoice],
     facts: DrawingFacts,
     chertezh_file,
-    marshrutnaya_file=None,
     batch_size: int = 1,
 ) -> tuple[list[OperationNorm], list[LLMCallMetrics]]:
     """Расчёт норм: модель получает конкретные операции + оборудование + чертёж.
@@ -67,8 +66,6 @@ def calculate_norms(
 
     # Отправляем чертёж для визуального анализа размеров
     pdf_files = [("Чертёж детали", chertezh_file)]
-    if marshrutnaya_file:
-        pdf_files.append(("Маршрутная карта", marshrutnaya_file))
 
     raw, llm_metrics = call_llm_with_pdf(
         system_prompt=CALCULATE_NORMS_PROMPT,
@@ -84,6 +81,13 @@ def calculate_norms(
     for item in raw:
         op_name = item.get("операция", "")
         eq = eq_map.get(op_name)
+        # Fallback: LLM иногда добавляет оборудование в название через " — "
+        # Пример: "010 Сборка/Разборка — Рабочее место по сборке ГМ"
+        if eq is None and " — " in op_name:
+            clean = op_name.split(" — ")[0].strip()
+            eq = eq_map.get(clean)
+            if eq:
+                op_name = clean  # исправляем имя операции
 
         norm = OperationNorm(
             **{

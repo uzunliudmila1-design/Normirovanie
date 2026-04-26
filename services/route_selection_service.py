@@ -5,9 +5,11 @@ import json
 
 from models.schemas import DrawingFacts, SelectedRoute, RouteCandidate, LLMCallMetrics
 from repositories.routes_repository import filter_routes, format_candidates_for_prompt
-from prompts.choose_route import CHOOSE_ROUTE_PROMPT
+from repositories.operations_repository import format_operations_for_prompt
+from prompts.choose_route import build_choose_route_prompt
 from services.claude_service import call_llm_text
 from services.cache_service import make_key, get as cache_get, put as cache_put
+from services.rules_service import load_rules
 
 
 def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetrics]]:
@@ -29,17 +31,17 @@ def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetric
     print(f"[ЭТАП 2] Отфильтровано {len(candidates)} кандидатов: "
           f"{', '.join(c.route_id for c in candidates)}", flush=True)
 
-    # Если лучший кандидат с большим отрывом — можно обойтись без модели
-    if len(candidates) == 1 or (candidates[0].score > 0.8 and candidates[0].score - candidates[1].score > 0.3):
+    # Если единственный кандидат — автовыбор (нечего выбирать)
+    if len(candidates) == 1:
         best = candidates[0]
-        print(f"[ЭТАП 3] Однозначный выбор кодом: {best.route_id} (score={best.score:.2f})", flush=True)
+        print(f"[ЭТАП 3] Единственный кандидат: {best.route_id} (score={best.score:.2f})", flush=True)
         return SelectedRoute(
             route_id=best.route_id,
             operations=best.operations,
             source="типовой каталог",
             confidence=int(best.score * 100),
-            reasoning=f"Автовыбор: {'; '.join(best.match_reasons)}",
-            alternatives=[c.route_id for c in candidates[1:]],
+            reasoning=f"Единственный подходящий маршрут: {'; '.join(best.match_reasons)}",
+            alternatives=[],
         ), []  # без LLM
 
     # ── Этап 3: модель выбирает из shortlist ──
@@ -58,6 +60,10 @@ def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetric
         except (ValueError, TypeError):
             conf = {"low": 25, "medium": 50, "high": 85}.get(str(raw_conf).lower(), 50)
         print(f"[ЭТАП 3] Маршрут из кэша: {chosen.route_id}", flush=True)
+        suggested: list[str] = []
+        if conf < 60:
+            suggested = _suggest_route_from_facts(facts)
+            print(f"[ЭТАП 3] Уверенность низкая ({conf}%) — предложен маршрут (кэш): {' | '.join(suggested)}", flush=True)
         return SelectedRoute(
             route_id=chosen.route_id,
             operations=chosen.operations,
@@ -65,10 +71,17 @@ def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetric
             confidence=conf,
             reasoning=cached.get("reasoning", ""),
             alternatives=[c.route_id for c in candidates if c.route_id != chosen.route_id],
+            suggested_route=suggested,
         ), []  # из кэша
 
     candidates_text = format_candidates_for_prompt(candidates)
     facts_text = _format_facts_for_prompt(facts)
+
+    rules_text = load_rules()
+    if rules_text:
+        print(f"[ЭТАП 3] Загружены бизнес-правила ({len(rules_text)} символов)", flush=True)
+
+    operations_text = format_operations_for_prompt()
 
     user_prompt = (
         f"PART FACTS:\n{facts_text}\n\n"
@@ -79,7 +92,7 @@ def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetric
     )
 
     raw, llm_metrics = call_llm_text(
-        system_prompt=CHOOSE_ROUTE_PROMPT,
+        system_prompt=build_choose_route_prompt(rules_text, operations_text),
         user_prompt=user_prompt,
     )
 
@@ -108,6 +121,11 @@ def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetric
 
     print(f"[ЭТАП 3] Модель выбрала: {chosen.route_id} (confidence={confidence})", flush=True)
 
+    suggested: list[str] = []
+    if confidence < 60:
+        suggested = _suggest_route_from_facts(facts)
+        print(f"[ЭТАП 3] Уверенность низкая ({confidence}%) — предложен маршрут: {' | '.join(suggested)}", flush=True)
+
     return SelectedRoute(
         route_id=chosen.route_id,
         operations=chosen.operations,
@@ -115,18 +133,8 @@ def select_route(facts: DrawingFacts) -> tuple[SelectedRoute, list[LLMCallMetric
         confidence=confidence,
         reasoning=reasoning,
         alternatives=[c.route_id for c in candidates if c.route_id != chosen.route_id],
+        suggested_route=suggested,
     ), llm_metrics
-
-
-def route_from_mk(operations_list: list[str]) -> SelectedRoute:
-    """Для Режима А: маршрут уже задан маршрутной картой."""
-    return SelectedRoute(
-        route_id="—",
-        operations=operations_list,
-        source="маршрутная карта",
-        confidence=100,
-        reasoning="Маршрут взят из предоставленной маршрутной карты",
-    )
 
 
 def _format_facts_for_prompt(facts: DrawingFacts) -> str:
@@ -170,3 +178,86 @@ def _format_facts_for_prompt(facts: DrawingFacts) -> str:
         lines.append(f"Шероховатость: Ra {facts.min_roughness_ra}")
 
     return "\n".join(lines)
+
+
+def _suggest_route_from_facts(facts: DrawingFacts) -> list[str]:
+    """Строит рекомендуемый маршрут на основе фактов чертежа и бизнес-правил.
+
+    Используется когда уверенность выбранного маршрута < 60%.
+    Порядок операций — технологическая последовательность.
+    """
+    ops: list[str] = []
+
+    # 1. Сборочный чертёж: первая операция — Комплектовочная
+    if facts.is_assembly:
+        ops.append("Комплектовочная")
+
+    # 2. Резка (бизнес-правило: толщина ≤ 12 мм → лазер, > 12 мм → плазма/газ)
+    if facts.has_cutting:
+        thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
+        if thickness and thickness <= 12:
+            ops.append("Лазерная резка")
+        else:
+            ops.append("Газо-плазменная резка")
+            ops.append("Зачистка")  # после газо-плазменной резки всегда идёт зачистка
+
+    # 3. Гибка / вальцовка
+    if facts.has_bending:
+        ops.append("Гибка")
+
+    # 4. Сварка (прихватка → сварка)
+    if facts.has_welding:
+        ops.append("Прихватка")
+        ops.append("Сварка полуавтоматическая")
+
+    # 5. Мехобработка
+    if facts.has_machining:
+        # Тела вращения (вал, втулка) → токарная; остальные → фрезерная
+        if facts.detail_type and any(k in facts.detail_type.lower() for k in ("вал", "втулк", "ось", "шток")):
+            ops.append("Токарная")
+        else:
+            ops.append("Фрезерная")
+
+    # 6. Шлифование
+    if facts.has_grinding:
+        ops.append("Шлифовальная")
+
+    # 7. Термообработка
+    if facts.has_heat_treatment:
+        ops.append("Термообработка")
+
+    # 8. Очистка (всегда после сварки — бизнес-правило)
+    if facts.has_cleaning:
+        ops.append("Очистка дробеметная")
+
+    # 9. Слесарная (отверстия, пазы, резьба)
+    if facts.has_holes or facts.has_threading or facts.has_slots:
+        ops.append("Слесарная")
+
+    # 10. Рихтовка (только при толщине ≥ 10 мм — бизнес-правило)
+    if facts.has_straightening:
+        thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
+        if thickness is None or thickness >= 10:  # запрещена для деталей < 10 мм
+            ops.append("Рихтовка")
+
+    # 11. Покраска
+    if facts.has_painting:
+        ops.append("Покраска")
+
+    # 12. Зачистка — если есть сварка
+    if facts.has_welding and "Зачистка" not in ops:
+        # вставляем зачистку после последней сварочной операции
+        try:
+            last_weld = max(i for i, o in enumerate(ops) if "варк" in o.lower() or "прихватк" in o.lower())
+            ops.insert(last_weld + 1, "Зачистка")
+        except ValueError:
+            pass
+
+    # 13. Маркировка — всегда перед концом
+    ops.append("Маркировка")
+
+    # 14. Сборочный чертёж: последняя — Контрольная ГП
+    if facts.is_assembly:
+        ops.append("Контрольная ГП")
+
+    return ops

@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 import shutil
 from dotenv import load_dotenv
 
@@ -17,12 +18,38 @@ DB_PATH = os.path.join(BASE_DIR, "norming.db")
 
 EQUIPMENT_XLSX = os.path.join(BASE_DIR, "data", "equipment.xlsx")
 TYPICAL_ROUTES_XLSX = os.path.join(BASE_DIR, "routes", "typical_routes.xlsx")
+OPERATIONS_XLSX = os.path.join(BASE_DIR, "data", "operations.xlsx")
 PRODUCTS_BASE_PATH = os.path.join(BASE_DIR, "Изделия")
 
 # ─── Claude ────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
-CLAUDE_BIN = os.getenv("CLAUDE_BIN") or shutil.which("claude") or "claude"
+
+
+def _find_claude_bin() -> str:
+    """Ищет бинарник Claude Code: сначала .env, потом PATH, потом стандартные места."""
+    # 1. Явно задан в .env
+    from_env = os.getenv("CLAUDE_BIN", "")
+    if from_env and os.path.isfile(from_env):
+        return from_env
+
+    # 2. Есть в PATH
+    in_path = shutil.which("claude")
+    if in_path:
+        return in_path
+
+    # 3. Стандартное место на macOS — берём последнюю установленную версию
+    pattern = os.path.expanduser(
+        "~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude"
+    )
+    candidates = sorted(glob.glob(pattern))  # сортировка по версии — последняя в конце
+    if candidates:
+        return candidates[-1]
+
+    return "claude"
+
+
+CLAUDE_BIN = _find_claude_bin()
 
 USE_STUB = os.getenv("USE_STUB", "false").lower() == "true"
 USE_CLAUDE_CODE = os.getenv("USE_CLAUDE_CODE", "true").lower() == "true"

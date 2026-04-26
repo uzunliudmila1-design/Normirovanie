@@ -5,11 +5,9 @@ from repositories.equipment_repository import (
     filter_by_operation_and_workshop,
     format_shortlist,
 )
-from prompts.choose_equipment import CHOOSE_EQUIPMENT_PROMPT
+from prompts.choose_equipment import build_choose_equipment_prompt
 from services.claude_service import call_llm_text
-
-# Покрасочные операции всегда из Цех №3
-_PAINTING_OPS = {"Покраска", "Грунтовка", "Окраска", "Лакирование"}
+from services.rules_service import load_rules
 
 # Маппинг стандартных операций → операции из базы оборудования
 # (в equipment.xlsx колонки «Операция 1/2/3» могут отличаться от названий в маршруте)
@@ -30,7 +28,7 @@ _OPERATION_ALIASES = {
 _NO_EQUIPMENT_OPS = {
     "Комплектовочная", "Комплектовочная (магазин)", "Комплектовочная (подготовка)",
     "Комплектовочная (покупные)", "Контрольная", "Контрольная ГП",
-    "Маркировка", "Консервация", "Испытание",
+    "Маркировка", "Консервация",
 }
 
 
@@ -62,8 +60,8 @@ def select_equipment(
             ))
             continue
 
-        # Определяем цех для покрасочных операций
-        op_workshop = "3" if op_name in _PAINTING_OPS else workshop
+        # Цех берём из маршрутной карты; если не найдено — ищем по всем цехам
+        op_workshop = workshop
 
         # Ищем по основному имени и алиасам
         search_names = _OPERATION_ALIASES.get(op_name, [op_name])
@@ -105,7 +103,7 @@ def select_equipment(
             continue
 
         # Несколько вариантов — нужен довыбор
-        shortlist_text = format_shortlist(unique, max_items=8)
+        shortlist_text = format_shortlist(unique, max_items=len(unique))
         ops_with_equipment.append((op, op_name, shortlist_text, unique))
 
     # Шаг 2: для операций с несколькими вариантами — вызов модели
@@ -126,6 +124,10 @@ def _select_via_llm(
     facts: DrawingFacts,
 ) -> tuple[list[EquipmentChoice], list[LLMCallMetrics]]:
     """Вызывает модель для выбора из shortlist по нескольким операциям за один вызов."""
+    rules_text = load_rules()
+    if rules_text:
+        print(f"[ЭТАП 4] Загружены бизнес-правила ({len(rules_text)} символов)", flush=True)
+
     lines = [f"Part: {facts.detail_name}, material: {facts.material}"]
     if facts.min_roughness_ra:
         lines.append(f"Surface: Ra {facts.min_roughness_ra}")
@@ -148,7 +150,7 @@ def _select_via_llm(
 
     try:
         raw, llm_metrics = call_llm_text(
-            system_prompt=CHOOSE_EQUIPMENT_PROMPT,
+            system_prompt=build_choose_equipment_prompt(rules_text),
             user_prompt=user_prompt,
         )
 

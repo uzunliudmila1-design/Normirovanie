@@ -5,6 +5,7 @@
 
 Анализ деталей идёт через конвейер 6 этапов (pipeline_service).
 """
+from __future__ import annotations
 
 import os
 import re
@@ -183,12 +184,37 @@ def analyze_part(ptype: str, variant: str, filename: str) -> dict:
         # Конвейер 6 этапов: факты → маршрут → оборудование → нормы → валидация
         pipeline_result = run_pipeline(
             chertezh_file=pdf_full,  # путь к файлу на диске
-            marshrutnaya_file=None,
             batch_size=1,
+            is_assembly=_is_assembly_drawing(filename),
         )
         api_data = pipeline_result.to_api_dict()
         operations = [op.to_api_dict() for op in pipeline_result.operations]
         route = api_data.get("маршрут", {})
+
+        # Для сборочных чертежей (СБ) — добавить Контрольная ГП если её нет
+        if _is_assembly_drawing(filename):
+            op_names = [op.get("операция", "") for op in operations]
+            has_kgp = any("контрольная гп" in n.lower() or "контрольная" in n.lower() for n in op_names)
+            if not has_kgp:
+                last_op = operations[-1].get("операция", "") if operations else ""
+                # Определяем следующий номер операции
+                last_num = 0
+                if last_op and last_op[:3].isdigit():
+                    last_num = int(last_op[:3])
+                next_num = f"{last_num + 10:03d}"
+                kgp_op = {
+                    "деталь": operations[0].get("деталь", "") if operations else "",
+                    "операция": f"{next_num} Контрольная ГП",
+                    "оборудование": "—",
+                    "t_шт_предложено": 15.0,
+                    "t_пз_предложено": 10.0,
+                    "режимы": "—",
+                    "обоснование": "Обязательная контрольная операция для сборочных единиц (СБ): проверка геометрии, сварных швов, покрытия и комплектности перед сдачей.",
+                }
+                operations.append(kgp_op)
+                # Обновляем маршрут
+                if route and route.get("операции"):
+                    route["операции"] = route["операции"] + " | Контрольная ГП"
 
     # Кэшируем
     cache = _load_products_cache(var_path)

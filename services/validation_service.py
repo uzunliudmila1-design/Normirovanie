@@ -61,15 +61,73 @@ def validate_result(
             "ПРОТИВОРЕЧИЕ: Чертёж показывает гибку, но в маршруте нет операции гибки"
         )
 
-    # 4. Проверка: покрасочное оборудование из Цех №3
-    for eq in equipment_choices:
-        op_lower = eq.operation.lower()
-        if any(kw in op_lower for kw in ("покраска", "грунт", "окраска", "лак")):
-            ws = eq.workshop.strip()
-            if ws and ws != "3" and ws != "Цех №3":
+    # вспомогательная функция — имя операции без номера, в нижнем регистре
+    def _op_bare(norm) -> str:
+        parts = norm.operation.strip().split(None, 1)
+        return (parts[1] if len(parts) == 2 and parts[0].isdigit() else norm.operation).lower()
+
+    # 3а. Правило 1б: Фрезерная/Сверлильная не нужна для листовых деталей с резкой
+    _SHEET_KW = ("листов", "ребро", "щека", "фланец", "пластин", "профил", "косынк", "заглушк")
+    dt = (facts.detail_type or "").lower()
+    dn = (facts.detail_name or "").lower()
+    is_sheet = any(k in dt or k in dn for k in _SHEET_KW)
+    route_has_cutting = any("плазм" in o.lower() or "лазерн" in o.lower() for o in route.operations)
+    if is_sheet and route_has_cutting and facts.has_holes:
+        for norm in norms:
+            op = _op_bare(norm)
+            if "фрезерн" in op or "сверлильн" in op:
                 warnings.append(
-                    f"ПРЕДУПРЕЖДЕНИЕ: {eq.operation} — оборудование из Цех №{ws}, "
-                    f"но покрасочные камеры только в Цех №3"
+                    f"ПРАВИЛО 1: {norm.operation} — у листовой детали с плазменной/лазерной резкой "
+                    f"отверстия вырезаются резкой, операция не нужна"
+                )
+
+    # 3б. Правило 2: метод резки должен соответствовать толщине металла (≤12мм → лазер, >12мм → плазма)
+    thickness = facts.thickness_mm or facts.height_mm or facts.width_mm
+    if thickness is not None and facts.has_cutting:
+        for norm in norms:
+            op = _op_bare(norm)
+            if "лазерн" in op and thickness > 12:
+                warnings.append(
+                    f"ПРАВИЛО 2: {norm.operation} — лазерная резка применяется при толщине ≤ 12 мм, "
+                    f"а толщина детали {thickness} мм. Следует использовать газо-плазменную резку."
+                )
+            if ("плазм" in op) and thickness <= 12:
+                warnings.append(
+                    f"ПРАВИЛО 2: {norm.operation} — газо-плазменная резка применяется при толщине > 12 мм, "
+                    f"а толщина детали {thickness} мм. Следует использовать лазерную резку."
+                )
+
+    # 3в. Шаг 2: Прихватка без Сварки — ошибка маршрута
+    has_prikhvatka = any("прихватк" in _op_bare(n) for n in norms)
+    has_svarka = any("сварк" in _op_bare(n) for n in norms)
+    if has_prikhvatka and not has_svarka:
+        warnings.append(
+            "ПРАВИЛО 3: В маршруте есть 'Прихватка', но нет сварочной операции — "
+            "прихватка выполняется только перед сваркой"
+        )
+
+    # 3г. Шаг 3: после сварки должна быть Зачистка
+    weld_ops_idx = [i for i, n in enumerate(norms) if "сварк" in _op_bare(n)]
+    zachistka_idx = [i for i, n in enumerate(norms) if "зачистк" in _op_bare(n)]
+    if weld_ops_idx:
+        last_weld_i = max(weld_ops_idx)
+        zachistka_after_weld = any(z > last_weld_i for z in zachistka_idx)
+        if not zachistka_after_weld:
+            warnings.append(
+                "ПРАВИЛО 4: В маршруте есть сварка, но после неё нет операции 'Зачистка' — "
+                "зачистка сварных швов обязательна"
+            )
+
+    # 4. Порядок: очистка дробеметная/пескоструйная — после сварки
+    clean_positions = [i for i, n in enumerate(norms) if "дробемет" in _op_bare(n) or "пескоструй" in _op_bare(n)]
+    weld_positions  = [i for i, n in enumerate(norms) if "сварк" in _op_bare(n) or "прихватк" in _op_bare(n)]
+    if clean_positions and weld_positions:
+        last_weld = max(weld_positions)
+        for ci in clean_positions:
+            if ci < last_weld:
+                warnings.append(
+                    f"ПОРЯДОК: '{norms[ci].operation}' стоит перед сваркой — "
+                    "очистка дробеметная выполняется только после сварки"
                 )
 
     # 5. Оборудование задано
@@ -93,10 +151,12 @@ def validate_result(
 
 
 def _is_manual_operation(op_name: str) -> bool:
-    """Операции, не требующие оборудования/режимов."""
+    """Операции, не требующие отдельного оборудования и режимов обработки."""
     manual = {
-        "комплектовочная", "контрольная", "контрольная гп", "маркировка",
-        "консервация", "испытание", "рихтовка",
+        "комплектовочная", "комплектовочная (магазин)",
+        "комплектовочная (подготовка)", "комплектовочная (покупные)",
+        "контрольная", "контрольная гп",
+        "маркировка", "консервация", "упаковка",
     }
     # Убираем номер
     parts = op_name.strip().split(None, 1)

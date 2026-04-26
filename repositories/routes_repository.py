@@ -1,5 +1,6 @@
 """Репозиторий типовых маршрутов: загрузка из Excel, парсинг, фильтрация."""
 
+from __future__ import annotations
 import os
 from typing import Optional
 
@@ -57,12 +58,15 @@ _FACT_TO_OPERATIONS: dict[str, list[str]] = {
         "Газо-плазменная резка", "Газо-плазменная резка (ручная)",
         "Газо-плазменная резка (стандарт)", "Лазерная резка",
         "Ленточно-отрезная", "Отрезная",
+        "Фаска (газо-плазменная резка)", "Фаска (фрезерование)",
     ],
     "has_bending": ["Гибка", "Вальцовка"],
     "has_welding": [
         "Сварка полуавтоматическая", "Сварка роботизированная",
-        "Прихватка", "Прихватка + Сварка полуавтоматическая",
+        "Сварка автоматическая",
+        "Прихватка",
         "Наплавка",
+        "Пайка",
     ],
     "has_machining": [
         "Токарная", "Токарная с ЧПУ", "Фрезерная", "Фрезерная с ЧПУ",
@@ -73,10 +77,17 @@ _FACT_TO_OPERATIONS: dict[str, list[str]] = {
         "Круглошлифовальная", "Плоскошлифовальная", "Внутришлифовальная",
     ],
     "has_painting": ["Покраска"],
-    "has_heat_treatment": ["Термообработка", "Азотирование"],
-    "has_assembly": ["Сборка/Разборка", "Комплектовочная"],
+    "has_heat_treatment": [
+        "Термообработка", "Азотирование", "Закалка ТВЧ",
+    ],
+    "has_assembly": [
+        "Сборка/Разборка",
+        "Комплектовочная", "Комплектовочная (магазин)",
+        "Комплектовочная (подготовка)", "Комплектовочная (покупные)",
+    ],
     "has_cleaning": ["Очистка дробеметная", "Очистка пескоструйная"],
     "has_straightening": ["Рихтовка"],
+    "has_holes": ["Слесарная", "Зачистка"],
 }
 
 # Обратный индекс: операция -> какой факт она подразумевает
@@ -131,7 +142,7 @@ def _score_route(route_ops: list[str], facts: DrawingFacts) -> tuple[float, list
         score = 0.3
     else:
         coverage = len(matched) / len(active_facts)  # Покрытие фактов
-        penalty = len(extra_facts) * 0.05  # Штраф за лишние операции
+        penalty = len(extra_facts) * 0.15  # Штраф за лишние операции
         score = max(0.0, min(1.0, coverage - penalty))
 
     return score, match_reasons, mismatch_reasons
@@ -169,9 +180,6 @@ def format_candidates_for_prompt(candidates: list[RouteCandidate]) -> str:
     for i, c in enumerate(candidates, 1):
         ops_str = " | ".join(c.operations)
         lines.append(f"{i}. {c.route_id}: {ops_str}")
-        lines.append(f"   Оценка: {c.score:.2f}")
-        if c.match_reasons:
-            lines.append(f"   Совпадения: {'; '.join(c.match_reasons)}")
         if c.mismatch_reasons:
             lines.append(f"   Расхождения: {'; '.join(c.mismatch_reasons)}")
     return "\n".join(lines)

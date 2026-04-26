@@ -1,5 +1,6 @@
 """Репозиторий оборудования: загрузка из Excel, нормализация, фильтрация."""
 
+from __future__ import annotations
 import os
 from typing import Optional
 

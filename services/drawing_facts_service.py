@@ -10,15 +10,14 @@ from services.claude_service import call_llm_with_pdf
 from services.cache_service import file_hash, make_key, get as cache_get, put as cache_put
 
 
-def extract_facts(chertezh_file, marshrutnaya_file=None) -> tuple[DrawingFacts, list[LLMCallMetrics]]:
-    """Извлекает структурированные факты из чертежа (и МК если есть).
+def extract_facts(chertezh_file) -> tuple[DrawingFacts, list[LLMCallMetrics]]:
+    """Извлекает структурированные факты из чертежа.
 
     Возвращает DrawingFacts — Pydantic-модель.
     """
     # Проверяем кэш
     h1 = file_hash(chertezh_file)
-    h2 = file_hash(marshrutnaya_file) if marshrutnaya_file else "none"
-    cache_key = make_key("facts", h1, h2)
+    cache_key = make_key("facts", h1)
 
     cached = cache_get(cache_key)
     if cached:
@@ -28,8 +27,6 @@ def extract_facts(chertezh_file, marshrutnaya_file=None) -> tuple[DrawingFacts, 
 
     # Вызов LLM
     pdf_files = [("Чертёж детали", chertezh_file)]
-    if marshrutnaya_file:
-        pdf_files.append(("Маршрутная карта", marshrutnaya_file))
 
     user_prompt = (
         "Extract facts from the document above. Return STRICTLY the JSON object "

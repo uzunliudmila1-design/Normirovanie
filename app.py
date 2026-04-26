@@ -106,10 +106,6 @@ def analyze_route():
     if not chertezh or chertezh.filename == "":
         return jsonify({"error": "Необходимо загрузить чертёж детали"}), 400
 
-    marshrutnaya = request.files.get("marshrutnaya")
-    if marshrutnaya and marshrutnaya.filename == "":
-        marshrutnaya = None
-
     batch_size = request.form.get("batch_size", 1)
     try:
         batch_size = int(batch_size)
@@ -129,7 +125,6 @@ def analyze_route():
     try:
         result = run_pipeline(
             chertezh_file=chertezh,
-            marshrutnaya_file=marshrutnaya,
             batch_size=batch_size,
         )
         api_data = result.to_api_dict()
@@ -229,6 +224,7 @@ from services.products_service import (
     extract_bom,
     save_qty,
 )
+from services.pipeline_service import get_analysis_status
 
 
 @app.route("/api/products/tree", methods=["GET"])
@@ -282,6 +278,12 @@ def products_results():
     if cache is None:
         return jsonify({"error": "Вариант не найден"}), 404
     return jsonify({"results": cache})
+
+
+@app.route("/api/products/analysis_status", methods=["GET"])
+def products_analysis_status():
+    """Текущий статус конвейера (этап 1-6 или не активен)."""
+    return jsonify(get_analysis_status())
 
 
 @app.route("/api/products/analyze_part", methods=["POST"])

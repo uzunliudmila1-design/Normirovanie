@@ -92,7 +92,8 @@ class DrawingFacts(BaseModel):
     mass_kg: Optional[float] = Field(None, description="Масса детали, кг")
     length_mm: Optional[float] = Field(None, description="Длина/габарит, мм")
     width_mm: Optional[float] = Field(None, description="Ширина, мм")
-    height_mm: Optional[float] = Field(None, description="Высота/толщина, мм")
+    height_mm: Optional[float] = Field(None, description="Высота, мм")
+    thickness_mm: Optional[float] = Field(None, description="Толщина листа/стенки, мм — для правил резки")
     diameter_mm: Optional[float] = Field(None, description="Диаметр (для тел вращения), мм")
 
     # Признаки наличия операций
@@ -114,6 +115,9 @@ class DrawingFacts(BaseModel):
     min_tolerance_it: Optional[int] = Field(None, description="Самый точный квалитет (IT6, IT7...)")
     min_roughness_ra: Optional[float] = Field(None, description="Минимальная шероховатость Ra")
     has_geometric_tolerances: bool = Field(False, description="Есть допуски формы/расположения")
+
+    # Сборочный чертёж
+    is_assembly: bool = Field(False, description="True если это сборочный чертёж (СБ) — детали приходят готовыми")
 
     # Рабочий цех (из МК если есть)
     workshop: Optional[str] = Field(None, description="Номер рабочего цеха из МК (1, 2, 3, 4)")
@@ -144,6 +148,10 @@ class SelectedRoute(BaseModel):
     confidence: int = Field(50, description="0-100")
     reasoning: str = Field("", description="Почему выбран именно этот")
     alternatives: list[str] = Field(default_factory=list, description="Альтернативные маршруты")
+    suggested_route: list[str] = Field(
+        default_factory=list,
+        description="Предложенный маршрут на основе фактов чертежа (при confidence < 60)"
+    )
 
 
 # ─── Этап 4: Оборудование ─────────────────────────────────────────────────────
@@ -214,6 +222,7 @@ class PipelineResult(BaseModel):
                 "источник": self.route.source,
                 "уверенность": self.route.confidence,
                 "обоснование": self.route.reasoning,
+                "предложенный_маршрут": " | ".join(self.route.suggested_route) if self.route.suggested_route else "",
             },
             "операции": [op.to_api_dict() for op in self.operations],
             "предупреждения": self.warnings,

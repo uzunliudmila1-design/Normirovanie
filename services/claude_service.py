@@ -129,15 +129,30 @@ def _extract_api_metrics(message, duration_ms: int) -> LLMCallMetrics:
     )
 
 
+def _api_call_with_retry(fn, max_retries: int = 3):
+    """Повтор API-вызова при 529 Overloaded с экспоненциальной паузой."""
+    import anthropic
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529 and attempt < max_retries - 1:
+                wait = 15 * (attempt + 1)
+                print(f"[API] 529 Overloaded — ждём {wait} сек (попытка {attempt + 1}/{max_retries})", flush=True)
+                time.sleep(wait)
+            else:
+                raise
+
+
 def _call_via_api(system_prompt: str, user_prompt: str) -> tuple[dict, list[LLMCallMetrics]]:
     client = _get_client()
     t0 = time.monotonic()
-    message = client.messages.create(
+    message = _api_call_with_retry(lambda: client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=4096,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
-    )
+    ))
     duration_ms = int((time.monotonic() - t0) * 1000)
     metrics = _extract_api_metrics(message, duration_ms)
     text = message.content[0].text
@@ -162,12 +177,12 @@ def _call_with_pdf_api(system_prompt: str, user_prompt: str, pdf_files: list) ->
     content.append({"type": "text", "text": user_prompt})
 
     t0 = time.monotonic()
-    message = client.messages.create(
+    message = _api_call_with_retry(lambda: client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=4096,
         system=system_prompt,
         messages=[{"role": "user", "content": content}],
-    )
+    ))
     duration_ms = int((time.monotonic() - t0) * 1000)
     metrics = _extract_api_metrics(message, duration_ms)
     text = message.content[0].text
@@ -176,7 +191,13 @@ def _call_with_pdf_api(system_prompt: str, user_prompt: str, pdf_files: list) ->
 
 # ─── CLI-реализация ───────────────────────────────────────────────────────────
 
-def _run_cli_text(system_prompt: str, prompt: str) -> tuple[str, LLMCallMetrics]:
+def _is_overloaded_error(stderr: str, stdout: str) -> bool:
+    """Проверяет, является ли ошибка CLI временной перегрузкой (529)."""
+    combined = (stderr + stdout).lower()
+    return "529" in combined or "overloaded" in combined
+
+
+def _run_cli_text(system_prompt: str, prompt: str, max_retries: int = 3) -> tuple[str, LLMCallMetrics]:
     """Запускает CLI без tool use — чистый текстовый вызов, output-format json работает.
 
     Запускается из temp-директории, чтобы CLAUDE.md проекта не влиял на поведение.
@@ -188,41 +209,53 @@ def _run_cli_text(system_prompt: str, prompt: str) -> tuple[str, LLMCallMetrics]
     # Запуск из temp чтобы CLAUDE.md не перехватывал поведение CLI
     tmp_dir = env.get("TEMP", env.get("TMP", BASE_DIR))
 
-    print("[CLI] Текстовый вызов...", flush=True)
+    for attempt in range(max_retries):
+        print(f"[CLI] Текстовый вызов{f' (попытка {attempt+1}/{max_retries})' if attempt else ''}...", flush=True)
 
-    t0 = time.monotonic()
-    try:
-        result = subprocess.run(
-            [
-                CLAUDE_BIN,
-                "-p", "-",
-                "--output-format", "json",
-                "--system-prompt", system_prompt,
-                "--model", "sonnet",
-                "--no-session-persistence",
-            ],
-            capture_output=True,
-            timeout=600,
-            env=env,
-            cwd=tmp_dir,
-            input=prompt.encode("utf-8"),
-        )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Claude Code: превышен таймаут (600 сек)")
-    except FileNotFoundError:
-        raise RuntimeError(f"Claude Code CLI не найден: {CLAUDE_BIN}")
+        t0 = time.monotonic()
+        try:
+            result = subprocess.run(
+                [
+                    CLAUDE_BIN,
+                    "-p", "-",
+                    "--output-format", "json",
+                    "--system-prompt", system_prompt,
+                    "--model", "sonnet",
+                    "--no-session-persistence",
+                ],
+                capture_output=True,
+                timeout=600,
+                env=env,
+                cwd=tmp_dir,
+                input=prompt.encode("utf-8"),
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("Claude Code: превышен таймаут (600 сек)")
+        except FileNotFoundError:
+            raise RuntimeError(f"Claude Code CLI не найден: {CLAUDE_BIN}")
 
-    wall_ms = int((time.monotonic() - t0) * 1000)
-    stdout = (result.stdout or b"").decode("utf-8", errors="replace").strip()
-    stderr = (result.stderr or b"").decode("utf-8", errors="replace").strip()
+        wall_ms = int((time.monotonic() - t0) * 1000)
+        stdout = (result.stdout or b"").decode("utf-8", errors="replace").strip()
+        stderr = (result.stderr or b"").decode("utf-8", errors="replace").strip()
 
-    print(f"[CLI] returncode={result.returncode}, stdout={len(stdout)} символов, время={wall_ms}мс", flush=True)
+        print(f"[CLI] returncode={result.returncode}, stdout={len(stdout)} символов, время={wall_ms}мс", flush=True)
 
-    if result.returncode != 0:
-        raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {stderr[:500]}")
+        # Retry при 529 overloaded
+        if result.returncode != 0 and _is_overloaded_error(stderr, stdout):
+            if attempt < max_retries - 1:
+                wait = 20 * (attempt + 1)
+                print(f"[CLI] 529 Overloaded — ждём {wait} сек...", flush=True)
+                time.sleep(wait)
+                continue
+            raise RuntimeError(f"Claude Code: сервер перегружен, попробуйте позже (529)")
 
-    if not stdout:
-        raise RuntimeError(f"Claude Code вернул пустой stdout. stderr: {stderr[:500]}")
+        if result.returncode != 0 and not stdout:
+            raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {stderr[:300]}")
+
+        if not stdout:
+            raise RuntimeError(f"Claude Code вернул пустой stdout. stderr: {stderr[:300]}")
+
+        break  # успешный вызов
 
     # Парсим JSON-обёртку {"result": "...", "usage": {...}, "cost_usd": ..., "duration_ms": ...}
     metrics = LLMCallMetrics(duration_ms=wall_ms)
@@ -230,6 +263,8 @@ def _run_cli_text(system_prompt: str, prompt: str) -> tuple[str, LLMCallMetrics]
         data = json.loads(stdout)
         if data.get("is_error"):
             raise RuntimeError(f"Claude Code: {data.get('result', 'неизвестная ошибка')}")
+        if result.returncode != 0 and not data.get("result"):
+            raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {stderr[:300]}")
 
         # Извлекаем метрики из CLI JSON
         usage = data.get("usage", {})
@@ -251,7 +286,7 @@ def _run_cli_text(system_prompt: str, prompt: str) -> tuple[str, LLMCallMetrics]
     return stdout, metrics
 
 
-def _run_cli_with_read(system_prompt: str, prompt: str) -> tuple[str, LLMCallMetrics]:
+def _run_cli_with_read(system_prompt: str, prompt: str, max_retries: int = 3) -> tuple[str, LLMCallMetrics]:
     """Запускает CLI с Read tool — output-format json НЕ работает, stdout = текст ответа.
 
     Возвращает (текст, метрики). Токены недоступны в этом режиме, только время.
@@ -259,41 +294,54 @@ def _run_cli_with_read(system_prompt: str, prompt: str) -> tuple[str, LLMCallMet
     env = os.environ.copy()
     env.pop("CLAUDECODE", None)
 
-    print("[CLI] Вызов с Read...", flush=True)
+    for attempt in range(max_retries):
+        print(f"[CLI] Вызов с Read{f' (попытка {attempt+1}/{max_retries})' if attempt else ''}...", flush=True)
 
-    t0 = time.monotonic()
-    try:
-        result = subprocess.run(
-            [
-                CLAUDE_BIN,
-                "-p", prompt,
-                "--allowedTools", "Read",
-                "--system-prompt", system_prompt,
-                "--model", "sonnet",
-                "--no-session-persistence",
-                "--dangerously-skip-permissions",
-            ],
-            capture_output=True,
-            timeout=600,
-            env=env,
-            cwd=BASE_DIR,
-        )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Claude Code: превышен таймаут (600 сек)")
-    except FileNotFoundError:
-        raise RuntimeError(f"Claude Code CLI не найден: {CLAUDE_BIN}")
+        t0 = time.monotonic()
+        try:
+            result = subprocess.run(
+                [
+                    CLAUDE_BIN,
+                    "-p", prompt,
+                    "--allowedTools", "Read",
+                    "--system-prompt", system_prompt,
+                    "--model", "sonnet",
+                    "--no-session-persistence",
+                    "--dangerously-skip-permissions",
+                ],
+                capture_output=True,
+                timeout=600,
+                env=env,
+                cwd=BASE_DIR,
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("Claude Code: превышен таймаут (600 сек)")
+        except FileNotFoundError:
+            raise RuntimeError(f"Claude Code CLI не найден: {CLAUDE_BIN}")
 
-    wall_ms = int((time.monotonic() - t0) * 1000)
-    stdout = (result.stdout or b"").decode("utf-8", errors="replace").strip()
-    stderr = (result.stderr or b"").decode("utf-8", errors="replace").strip()
+        wall_ms = int((time.monotonic() - t0) * 1000)
+        stdout = (result.stdout or b"").decode("utf-8", errors="replace").strip()
+        stderr = (result.stderr or b"").decode("utf-8", errors="replace").strip()
 
-    print(f"[CLI] returncode={result.returncode}, stdout={len(stdout)} символов, время={wall_ms}мс", flush=True)
+        print(f"[CLI] returncode={result.returncode}, stdout={len(stdout)} символов, время={wall_ms}мс", flush=True)
 
-    if result.returncode != 0:
-        raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {stderr[:500]}")
+        if result.returncode != 0 and _is_overloaded_error(stderr, stdout):
+            if attempt < max_retries - 1:
+                wait = 20 * (attempt + 1)
+                print(f"[CLI] 529 Overloaded — ждём {wait} сек...", flush=True)
+                time.sleep(wait)
+                continue
+            raise RuntimeError(f"Claude Code: сервер перегружен, попробуйте позже (529)")
 
-    if not stdout:
-        raise RuntimeError(f"Claude Code вернул пустой stdout. stderr: {stderr[:500]}")
+        if result.returncode != 0:
+            print(f"[CLI] stderr: {stderr[:300]}", flush=True)
+            print(f"[CLI] stdout: {stdout[:300]}", flush=True)
+            raise RuntimeError(f"Claude Code ошибка (код {result.returncode}): {stderr[:300] or stdout[:300]}")
+
+        if not stdout:
+            raise RuntimeError(f"Claude Code вернул пустой stdout. stderr: {stderr[:300]}")
+
+        break
 
     metrics = LLMCallMetrics(duration_ms=wall_ms)
     return stdout, metrics

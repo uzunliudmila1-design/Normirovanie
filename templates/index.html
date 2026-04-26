@@ -189,7 +189,7 @@
   .route-toggle.open { transform: rotate(180deg); }
   .route-body { padding: 0 16px 12px 16px; display: none; }
   .route-body.open { display: block; }
-  .route-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .route-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
   .route-justif-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
   .route-conf-note { font-size: 11px; color: var(--text3); margin-top: 8px; font-style: italic; }
 
@@ -206,6 +206,8 @@
   /* LOADER */
   .loader { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(0,194,184,0.3); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .stage-progress-indicator { display: inline-block; animation: stagePulse 1.8s ease-in-out infinite; color: var(--teal); font-weight: 600; }
+  @keyframes stagePulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
 
   /* BUTTONS */
   .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: var(--r-sm); font-family: 'Onest', sans-serif; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.13s; border: none; letter-spacing: 0.01em; }
@@ -255,7 +257,7 @@
 
   /* TABLE */
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
   thead th { background: var(--sidebar-bg); color: var(--text3); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 9px 11px; text-align: left; border: 1px solid var(--border); white-space: nowrap; }
   thead th.num-col { text-align: center; }
   tbody tr.data-row { border-bottom: 1px solid var(--border); transition: background 0.1s; }
@@ -464,8 +466,22 @@
   .part-route-ops { font-size: 11px; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .part-route-body { padding: 10px 16px; border-top: 1px solid var(--border); display: none; }
   .part-route-body.open { display: block; }
-  .part-route-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .part-route-justif-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
   .part-route-justif { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .part-route-low-conf { margin-top: 12px; display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(230,100,60,0.07); border: 1px solid rgba(230,100,60,0.2); border-radius: 5px; font-size: 11px; color: #e06040; }
+  .part-route-low-conf-icon { font-size: 13px; flex-shrink: 0; }
+  .part-route-suggestion { margin-top: 8px; padding: 10px 14px; background: rgba(230,180,60,0.07); border: 1px solid rgba(230,180,60,0.25); border-radius: 6px; }
+  .part-route-suggestion-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .part-route-suggestion-ops { font-size: 12px; color: var(--text); font-weight: 500; line-height: 1.6; word-break: break-word; }
+  .part-route-suggestion-ops span { display: inline-block; background: rgba(230,180,60,0.12); border: 1px solid rgba(230,180,60,0.3); border-radius: 3px; padding: 1px 6px; margin: 2px 3px 2px 0; font-size: 11px; }
+  .part-route-suggestion-hint { font-size: 10px; color: var(--text3); margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(230,180,60,0.2); }
+  .reasoning-route-line { display: flex; align-items: baseline; gap: 6px; padding: 5px 8px; margin-bottom: 4px; background: var(--card2-bg); border-left: 3px solid var(--teal); border-radius: 0 4px 4px 0; }
+  .reasoning-route-id { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px; color: var(--teal); flex-shrink: 0; }
+  .reasoning-route-score { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); flex-shrink: 0; }
+  .reasoning-route-text { font-size: 12px; color: var(--text); }
+  .reasoning-verdict { margin-top: 8px; padding: 6px 10px; background: rgba(0,194,184,0.07); border-radius: 5px; font-size: 12px; color: var(--text); line-height: 1.5; }
+  .reasoning-verdict strong { color: var(--teal); }
+  .reasoning-line { font-size: 12px; color: var(--text2); margin-bottom: 2px; }
 
   /* PART OPERATIONS TABLE */
   .part-ops-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
@@ -673,22 +689,7 @@
               <div class="upload-filename" id="chertezh-name"></div>
               <span class="badge-req">обязательно</span>
             </div>
-            <div class="upload-zone" id="drop-marshrutnaya"
-                 ondragover="onDragOver(event,'drop-marshrutnaya')"
-                 ondragleave="onDragLeave('drop-marshrutnaya')"
-                 ondrop="onDrop(event,'marshrutnaya-input','drop-marshrutnaya','marshrutnaya-name')">
-              <input type="file" id="marshrutnaya-input" accept=".pdf"
-                     onchange="onFileChange('marshrutnaya-input','drop-marshrutnaya','marshrutnaya-name')">
-              <div class="upload-icon">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8l2.5 2.5L8 7M8 3.5h5M8 7h4.5M8 10.5h4" stroke="#8AAAD4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="upload-type">Маршрутная карта</div>
-              <div class="upload-hint">PDF · необязательно</div>
-              <div class="upload-filename" id="marshrutnaya-name"></div>
-              <span class="badge-opt">опционально</span>
-            </div>
+
           </div>
           <div class="status-bar" id="status"><div class="status-dot-s"></div><span id="status-text"></span></div>
           <div class="btn-row">
@@ -765,9 +766,21 @@
       </div>
       <div class="table-wrap">
         <table id="results-table">
+          <colgroup>
+            <col style="width:24px">
+            <col style="width:40px">
+            <col style="width:150px">
+            <col style="width:200px">
+            <col style="width:230px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:230px">
+          </colgroup>
           <thead>
             <tr>
-              <th style="width:32px"></th>
+              <th></th>
               <th>#</th>
               <th>Деталь</th>
               <th>Операция</th>
@@ -808,6 +821,18 @@
       </div>
       <div class="table-wrap">
         <table id="session-table">
+          <colgroup>
+            <col style="width:40px">
+            <col style="width:150px">
+            <col style="width:200px">
+            <col style="width:230px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:80px">
+            <col style="width:230px">
+            <col style="width:200px">
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>
@@ -839,6 +864,19 @@
       <div class="history-body">
         <div class="table-wrap">
           <table id="history-table">
+            <colgroup>
+              <col style="width:40px">
+              <col style="width:90px">
+              <col style="width:150px">
+              <col style="width:200px">
+              <col style="width:230px">
+              <col style="width:80px">
+              <col style="width:80px">
+              <col style="width:80px">
+              <col style="width:80px">
+              <col style="width:230px">
+              <col style="width:200px">
+            </colgroup>
             <thead>
               <tr>
                 <th>#</th>
@@ -1101,21 +1139,19 @@
   // --- Analyze ---
   async function analyze() {
     const chertezh = document.getElementById('chertezh-input').files[0];
-    const marshrutnaya = document.getElementById('marshrutnaya-input').files[0];
 
     currentBatchSize = parseInt(document.getElementById('batch-size-input').value) || 1;
     if (currentBatchSize < 1) currentBatchSize = 1;
 
     const form = new FormData();
     form.append('chertezh', chertezh);
-    if (marshrutnaya) form.append('marshrutnaya', marshrutnaya);
     form.append('batch_size', currentBatchSize);
 
     document.getElementById('btn-analyze').disabled = true;
     setStatus('info', '<span class="loader"></span>&nbsp;Запуск конвейера нормирования...');
     updateSteps(2);
 
-    addLog('Запуск анализа: чертёж=' + chertezh.name + (marshrutnaya ? ', МК=' + marshrutnaya.name : ', без МК') + ', партия=' + currentBatchSize, 'step');
+    addLog('Запуск анализа: чертёж=' + chertezh.name + ', партия=' + currentBatchSize, 'step');
 
     try {
       const t0 = performance.now();
@@ -1139,10 +1175,34 @@
 
       // Показать предупреждения конвейера если есть
       const warnings = data['предупреждения'] || [];
+      const ruleWarnings = warnings.filter(w => w.startsWith('[ПРАВИЛО]'));
+      const otherWarnings = warnings.filter(w => !w.startsWith('[ПРАВИЛО]'));
+
+      // Отдельная яркая плашка для нарушений бизнес-правил
+      const rulesBanner = document.getElementById('rules-violations-banner');
+      if (rulesBanner) rulesBanner.remove();
+      if (ruleWarnings.length > 0) {
+        ruleWarnings.forEach(w => addLog('⚠ ' + w, 'warn'));
+        const banner = document.createElement('div');
+        banner.id = 'rules-violations-banner';
+        banner.style.cssText = 'margin:12px 0;padding:12px 16px;background:#3d1a1a;border:2px solid #e05252;border-radius:8px;color:#f08080;font-size:0.92em;';
+        const items = ruleWarnings.map(w => '<div style="margin:3px 0;padding-left:8px;border-left:3px solid #e05252">• ' + w.replace('[ПРАВИЛО] ', '') + '</div>').join('');
+        banner.innerHTML = '<div style="font-weight:700;font-size:1em;margin-bottom:6px;color:#e05252">⛔ Нарушения бизнес-правил (' + ruleWarnings.length + ')</div>' + items + '<div style="margin-top:8px;font-size:0.82em;color:#9a7070">Случаи записаны в rules/business_rules.md для еженедельного пересмотра</div>';
+        const resultsEl = document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentElement('beforebegin', banner);
+      }
+
       if (warnings.length > 0) {
-        warnings.forEach(w => addLog(w, 'warn'));
-        const warnHtml = warnings.map(w => '<div style="margin:2px 0">• ' + w + '</div>').join('');
-        setStatus('success', '✓ Расчёт выполнен.<details style="margin-top:6px;cursor:pointer"><summary style="color:var(--amber)">⚠ Предупреждения (' + warnings.length + ')</summary><div style="margin-top:4px;font-size:0.85em;color:#b0b0b0">' + warnHtml + '</div></details>');
+        warnings.forEach(w => { if (!w.startsWith('[ПРАВИЛО]')) addLog(w, 'warn'); });
+        const warnHtml = otherWarnings.map(w => '<div style="margin:2px 0">• ' + w + '</div>').join('');
+        const statusText = ruleWarnings.length > 0
+          ? '✓ Расчёт выполнен. <span style="color:#e05252">⛔ ' + ruleWarnings.length + ' нарушения правил</span>'
+          : '✓ Расчёт выполнен.';
+        if (otherWarnings.length > 0) {
+          setStatus('success', statusText + '<details style="margin-top:6px;cursor:pointer"><summary style="color:var(--amber)">⚠ Предупреждения (' + otherWarnings.length + ')</summary><div style="margin-top:4px;font-size:0.85em;color:#b0b0b0">' + warnHtml + '</div></details>');
+        } else {
+          setStatus('success', statusText);
+        }
       } else {
         setStatus('success', '✓ Расчёт выполнен. Проверьте значения и добавьте к изделию.');
       }
@@ -1176,7 +1236,7 @@
     block.style.display = 'block';
     const conf = маршрут.уверенность || 0;
     const color = conf >= 80 ? 'var(--teal)' : conf >= 60 ? 'var(--amber)' : '#e07070';
-    document.getElementById('route-num').textContent = маршрут.источник === 'маршрутная карта' ? 'МК' : (маршрут.номер || '—');
+    document.getElementById('route-num').textContent = маршрут.номер || '—';
     document.getElementById('route-ops').textContent = маршрут.операции || '';
     document.getElementById('route-conf-fill').style.width = conf + '%';
     document.getElementById('route-conf-fill').style.background = color;
@@ -1376,11 +1436,8 @@
 
   function clearUploadZone() {
     document.getElementById('chertezh-input').value = '';
-    document.getElementById('marshrutnaya-input').value = '';
     document.getElementById('chertezh-name').textContent = '';
-    document.getElementById('marshrutnaya-name').textContent = '';
     document.getElementById('drop-chertezh').classList.remove('filled');
-    document.getElementById('drop-marshrutnaya').classList.remove('filled');
   }
 
   function renderSession() {
@@ -1563,10 +1620,20 @@
   }
 
   function formatReasoning(s) {
-    // Экранируем HTML, затем: \n → <br>, **text** → <strong>text</strong>
-    return esc(s)
-      .replace(/\n/g, '<br>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    if (!s || s === '—') return '<span style="color:var(--text3)">—</span>';
+    const lines = s.split('\n');
+    // Ищем строку с **Вывод: ...** — показываем только её
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (line.includes('**')) {
+        const formatted = esc(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return `<div class="reasoning-verdict">${formatted}</div>`;
+      }
+    }
+    // Если вывода нет — показываем последнюю непустую строку
+    const nonEmpty = lines.map(l => l.trim()).filter(Boolean);
+    if (!nonEmpty.length) return '<span style="color:var(--text3)">—</span>';
+    return `<div class="reasoning-verdict">${esc(nonEmpty[nonEmpty.length - 1])}</div>`;
   }
 
   // --- Reset ---
@@ -1920,6 +1987,7 @@
   let _productsFiles = [];       // [{path, name, type}]
   let _productsResults = {};     // filename -> {operations, analyzed_at}
   let _productsQty = {};         // filename -> количество (default 1)
+  let _analysisPollTimer = null; // таймер опроса статуса анализа
 
   async function loadProductsTree() {
     try {
@@ -2168,12 +2236,24 @@
     block.innerHTML = `
       <div class="part-route-header" onclick="this.nextElementSibling.classList.toggle('open')">
         <span class="part-route-badge">Маршрут</span>
+        ${routeInfo && routeInfo.номер ? `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);font-weight:600;margin-right:6px">${esc(routeInfo.номер)}</span>` : ''}
         <span class="part-route-ops">${esc(routeText)}</span>
+        ${routeInfo && routeInfo.уверенность != null ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap;background:${routeInfo.уверенность >= 80 ? 'var(--teal-light)' : routeInfo.уверенность >= 60 ? 'rgba(230,180,60,0.12)' : 'rgba(200,80,80,0.1)'};color:${routeInfo.уверенность >= 80 ? 'var(--teal)' : routeInfo.уверенность >= 60 ? 'var(--amber)' : '#e07070'}">${routeInfo.уверенность}%</span>` : ''}
         <svg viewBox="0 0 10 10" fill="none" width="10" height="10" style="opacity:0.4;flex-shrink:0"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="part-route-body">
         <div class="part-route-justif-label">Обоснование выбора маршрута</div>
-        <div class="part-route-justif">${esc(routeJustif || '—')}</div>
+        <div class="part-route-justif">${formatReasoning(routeJustif || '—')}</div>
+        ${routeInfo && routeInfo.уверенность < 60 && routeInfo.предложенный_маршрут ? `
+        <div class="part-route-low-conf">
+          <span class="part-route-low-conf-icon">⚠️</span>
+          <span>Уверенность в маршруте низкая (${routeInfo.уверенность}%) — подходящего маршрута в каталоге не найдено. Ниже — рекомендуемый маршрут, составленный по фактам чертежа.</span>
+        </div>
+        <div class="part-route-suggestion">
+          <div class="part-route-suggestion-label">💡 Рекомендуемый маршрут</div>
+          <div class="part-route-suggestion-ops">${routeInfo.предложенный_маршрут.split(' | ').map(op => `<span>${esc(op)}</span>`).join('')}</div>
+          <div class="part-route-suggestion-hint">сформирован кодом по признакам чертежа · рекомендуется добавить этот маршрут в каталог</div>
+        </div>` : ''}
       </div>
     `;
     return block;
@@ -2185,11 +2265,23 @@
     const table = document.createElement('table');
     table.className = 'part-ops-table';
     table.innerHTML = `
+      <colgroup>
+        <col style="width:24px">
+        <col style="width:200px">
+        <col style="width:230px">
+        <col style="width:120px">
+        <col style="width:230px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:80px">
+      </colgroup>
       <thead>
         <tr>
-          <th style="width:24px"></th>
+          <th></th>
           <th>Операция</th>
           <th>Оборудование</th>
+          <th>Цех</th>
           <th>Режимы</th>
           <th style="text-align:center">t_шт (ИИ)</th>
           <th style="text-align:center">t_шт (техн.)</th>
@@ -2204,6 +2296,11 @@
       const uid = `p${partIdx}-op${i}`;
       const tsht = parseFloat(op['t_шт_предложено'] || 0);
       const tpz = parseFloat(op['t_пз_предложено'] || 0);
+      // Цех: извлекаем из поля оборудование "[Цех №X]" или из отдельного поля
+      const wsMatch = (op['оборудование'] || '').match(/\[([^\]]+)\]/);
+      const workshop = op['цех'] || (wsMatch ? wsMatch[1] : '—');
+      // Оборудование без суффикса "[Цех №X]"
+      const equipName = (op['оборудование'] || '—').replace(/\s*\[[^\]]*\]\s*$/, '').trim() || '—';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -2213,8 +2310,9 @@
           </div>
         </td>
         <td class="op-num">${esc(op['операция'] || '—')}</td>
-        <td style="font-size:11px">${esc(op['оборудование'] || '—')}</td>
-        <td style="font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(op['режимы'] || '')}">${esc(op['режимы'] || '—')}</td>
+        <td style="font-size:11px;white-space:normal;word-break:break-word">${esc(equipName)}</td>
+        <td style="font-size:11px;color:var(--text3)">${esc(workshop)}</td>
+        <td style="font-size:10.5px;white-space:pre-wrap;word-break:break-word;line-height:1.5">${esc(op['режимы'] || '—')}</td>
         <td style="text-align:center"><span class="ai-val">AI ${tsht.toFixed(1)}</span></td>
         <td style="text-align:center"><input class="conf-input" type="number" step="0.1" min="0" value="${tsht.toFixed(1)}" data-part="${partIdx}" data-op="${i}" data-field="t_шт"></td>
         <td style="text-align:center"><span class="ai-val">AI ${tpz.toFixed(1)}</span></td>
@@ -2226,7 +2324,7 @@
       jr.id = 'pj-' + uid;
       jr.style.display = 'none';
       jr.innerHTML = `
-        <td colspan="8" style="padding:0">
+        <td colspan="9" style="padding:0">
           <div class="part-justif-block">
             <div class="part-justif-stripe"></div>
             <div class="part-justif-inner">
@@ -2273,6 +2371,41 @@
     }
   }
 
+  function _stopAnalysisPoll() {
+    if (_analysisPollTimer) { clearInterval(_analysisPollTimer); _analysisPollTimer = null; }
+  }
+
+  function _startAnalysisPoll(getBtnEl, getBodyEl) {
+    _stopAnalysisPoll();
+    const stageNames = {
+      1: 'Извлечение фактов',
+      2: 'Выбор маршрута',
+      3: 'Выбор маршрута',
+      4: 'Подбор оборудования',
+      5: 'Расчёт норм',
+      6: 'Валидация',
+    };
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/products/analysis_status');
+        const s = await r.json();
+        if (s.active) {
+          const btnEl = getBtnEl();
+          const bodyEl = getBodyEl();
+          const label = `Этап ${s.stage}/6 — ${stageNames[s.stage] || s.stage_name}`;
+          if (btnEl) btnEl.textContent = label;
+          if (bodyEl) {
+            const ind = bodyEl.querySelector('.stage-progress-indicator');
+            if (ind) ind.textContent = label;
+          }
+        }
+      } catch {}
+    };
+    // Первый опрос через 3 сек, затем каждые 5 сек
+    setTimeout(poll, 3000);
+    _analysisPollTimer = setInterval(poll, 5000);
+  }
+
   async function analyzePart(idx) {
     const file = _productsFiles[idx];
     if (!file) return;
@@ -2280,10 +2413,18 @@
     const btn = document.getElementById('btn-part-' + idx);
     const body = document.getElementById('part-body-' + idx);
     if (btn) { btn.classList.add('loading'); btn.textContent = 'Анализ...'; }
-    if (body) { body.classList.add('open'); body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Анализ... (может занять до минуты)</div>'; }
+    if (body) {
+      body.classList.add('open');
+      body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;"><span class="stage-progress-indicator">Анализ... (может занять до минуты)</span></div>';
+    }
 
     const section = document.getElementById('part-' + idx);
     if (section) section.querySelector('.chevron').classList.add('open');
+
+    _startAnalysisPoll(
+      () => document.getElementById('btn-part-' + idx),
+      () => document.getElementById('part-body-' + idx),
+    );
 
     try {
       const resp = await fetch('/api/products/analyze_part', {
@@ -2295,6 +2436,7 @@
           filename: file.path
         })
       });
+      _stopAnalysisPoll();
       const data = await resp.json();
       if (data.error) {
         body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка: ${esc(data.error)}</div>`;
@@ -2313,6 +2455,7 @@
       updateProductTotals();
 
     } catch (e) {
+      _stopAnalysisPoll();
       body.innerHTML = `<div style="padding:16px;color:#cc6060;font-size:12px;">Ошибка сети: ${esc(e.message)}</div>`;
       if (btn) { btn.classList.remove('loading'); btn.textContent = 'Повторить'; }
     }
